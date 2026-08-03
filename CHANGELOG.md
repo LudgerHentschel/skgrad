@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0
+
+- Stabilize the public value-and-input-Jacobian API established in dev0.
+- Validate the API against Integrated Gradients in UnifiedIG and analytic
+  loss-gradient composition in MPAIG.
+- Preserve raw score/logit semantics for every classification model.
+
 ## 0.1.0.dev0
 
 - Establish the public value-and-input-Jacobian API.
