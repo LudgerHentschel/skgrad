@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LinearRegression
+from sklearn.neural_network import MLPRegressor
 from sklearn.tree import DecisionTreeRegressor
 
 import skgrad
@@ -31,6 +32,20 @@ def test_validation_and_unsupported_model_errors():
     assert not skgrad.supports(tree)
     with pytest.raises(TypeError, match="does not support"):
         skgrad.input_jacobian(tree, [[1.0, 2.0]])
+
+
+def test_support_is_unified_and_gradient_properties_enable_optimization():
+    affine = LinearRegression()
+    mlp = MLPRegressor()
+    tree = DecisionTreeRegressor()
+
+    assert skgrad.supports(affine)
+    assert skgrad.gradient_properties(affine).constant_jacobian
+    assert skgrad.supports(mlp)
+    assert not skgrad.gradient_properties(mlp).constant_jacobian
+    assert not skgrad.supports(tree)
+    with pytest.raises(TypeError, match="does not support"):
+        skgrad.gradient_properties(tree)
 
 
 def test_target_validation():

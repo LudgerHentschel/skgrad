@@ -37,7 +37,13 @@ skgrad.value_and_jacobian(model, X)
 ```
 
 `input_gradient` is the scalar-output convenience API. A target is required
-when the model has multiple outputs.
+when the model has multiple outputs. `supports` is the single capability check;
+users do not need to distinguish internal model families.
+
+For downstream composition, `skgrad.gradient_properties(model)` reports
+computational metadata such as whether the input Jacobian is constant. This
+allows consumers to optimize integration without duplicating skgrad's estimator
+registry or exposing separate family-specific support predicates.
 
 Tree models, parameter gradients, numerical differentiation, Integrated
 Gradients, and baseline handling are deliberately outside the package scope.

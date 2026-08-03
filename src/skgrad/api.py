@@ -20,10 +20,26 @@ class GradientResult(NamedTuple):
     jacobian: FloatArray
 
 
+class GradientProperties(NamedTuple):
+    """Properties that downstream gradient consumers may optimize around."""
+
+    constant_jacobian: bool
+
+
 def supports(model: object) -> bool:
     """Return whether skgrad has an analytic backend for ``model``."""
 
     return affine_supports(model) or mlp_supports(model)
+
+
+def gradient_properties(model: object) -> GradientProperties:
+    """Return computational properties of a supported model's Jacobian."""
+
+    if affine_supports(model):
+        return GradientProperties(constant_jacobian=True)
+    if mlp_supports(model):
+        return GradientProperties(constant_jacobian=False)
+    raise TypeError(f"skgrad does not support {type(model).__name__}")
 
 
 def value_and_jacobian(model: object, X: object) -> GradientResult:

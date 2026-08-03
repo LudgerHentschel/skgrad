@@ -3,7 +3,9 @@
 from importlib.metadata import PackageNotFoundError, version
 
 from .api import (
+    GradientProperties,
     GradientResult,
+    gradient_properties,
     input_gradient,
     input_jacobian,
     model_output,
@@ -12,7 +14,9 @@ from .api import (
 )
 
 __all__ = [
+    "GradientProperties",
     "GradientResult",
+    "gradient_properties",
     "input_gradient",
     "input_jacobian",
     "model_output",

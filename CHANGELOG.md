@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Add constant-Jacobian metadata for downstream optimization while preserving
+  one unified model-support predicate.
+
 ## 0.1.0
 
 - Stabilize the public value-and-input-Jacobian API established in dev0.
