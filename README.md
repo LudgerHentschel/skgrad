@@ -43,6 +43,5 @@ Tree models, parameter gradients, numerical differentiation, Integrated
 Gradients, and baseline handling are deliberately outside the package scope.
 
 The `value_and_jacobian` primitive is designed for downstream composition.
-For example, UnifiedIG integrates its Jacobians to explain model outputs,
-while MPAIG combines them with analytic loss derivatives to explain realized
-predictive performance.
+For example, UnifiedIG integrates its Jacobians to explain model outputs, and
+other consumers can combine them with analytic chain-rule transformations.
