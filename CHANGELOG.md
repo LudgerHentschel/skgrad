@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Speed up selected-output MLP input gradients with a two-dimensional reverse
+  pass while retaining the complete-Jacobian APIs.
+- Parallelize selected-output MLP gradients across large sample batches with a
+  bounded, hardware-aware worker heuristic.
+- Preserve scikit-learn MLP float32 and mixed-input dtype behavior in values
+  and input gradients.
+- Support the exponential output link and input gradients of Poisson-loss
+  `MLPRegressor` models.
+- Recreate the persistent MLP gradient executor after process forks and add
+  macOS and Windows CI coverage.
+
 ## 0.1.1
 
 - Add constant-Jacobian metadata for downstream optimization while preserving

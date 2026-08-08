@@ -7,7 +7,12 @@ from numpy.typing import NDArray
 
 from ._affine import affine_model_output, affine_supports, affine_value_and_jacobian
 from ._inputs import normalize_data
-from ._mlp import mlp_model_output, mlp_supports, mlp_value_and_jacobian
+from ._mlp import (
+    mlp_input_gradient,
+    mlp_model_output,
+    mlp_supports,
+    mlp_value_and_jacobian,
+)
 
 
 FloatArray = NDArray[np.floating]
@@ -83,6 +88,9 @@ def input_gradient(
     target: Optional[int] = None,
 ) -> FloatArray:
     """Return gradients for one selected scalar model output."""
+
+    if mlp_supports(model):
+        return mlp_input_gradient(model, normalize_data(X), target)
 
     jacobian = input_jacobian(model, X)
     n_outputs = jacobian.shape[1]
