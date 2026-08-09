@@ -66,6 +66,13 @@ gradient = skgrad.input_gradient(model, X_eval, target=1)
 
 Use `skgrad.supports(model)` to check model coverage before calculation.
 
+![A one-dimensional fitted ReLU network and its exact input gradients](docs/relu-analytic-gradients.svg)
+
+For a ReLU MLP, a forward pass identifies the active hidden units at each
+input. Their known slopes and fitted weights then combine in a batched reverse
+pass. With multiple features, the scalar slopes pictured above become input
+gradient vectors computed by the same matrix operations.
+
 ## Supported models
 
 | Family | Models | Differentiated output |
@@ -112,7 +119,54 @@ for the complete contract.
 
 For affine estimators, the input Jacobian is simply the fitted coefficient
 matrix and is effectively free to reuse. MLP gradients require a forward pass
-and reverse pass, making PyTorch CPU autodiff a useful demanding comparison.
+and reverse pass. The benchmarks below answer three separate questions:
+whether the analytic gradients agree with numerical differentiation, how much
+work generic numerical differentiation requires, and how the MLP implementation
+compares with a highly optimized automatic-differentiation system.
+
+### Numerical agreement
+
+`skgrad` agrees closely with generic two-sided central differences. Each
+numerical derivative below used
+`(f(x + h e_j) - f(x - h e_j)) / (2h)` with `h = 1e-5`, applied to a batch of
+100 rows and 100 features. Relative error is the maximum absolute error divided
+by the largest absolute numerical-gradient entry:
+
+| Model | Differentiated output | Maximum absolute error | Relative error |
+|---|---|---:|---:|
+| LogisticRegression | Decision score | 1.260e-10 | 7.511e-11 |
+| MLPRegressor `(64, 64)`, tanh | Prediction | 1.216e-10 | 7.488e-11 |
+| MLPClassifier `(32,)`, tanh | First class logit | 4.354e-10 | 1.090e-10 |
+
+### Speed versus numerical differentiation
+
+Central differences require two model evaluations for every input feature.
+The following benchmark holds the evaluation batch at 100 rows while varying
+the number of features. It compares a direct analytic gradient
+(`LogisticRegression`) with a gradient composed by a forward and reverse pass
+(`MLPRegressor`). Timings exclude fitting and are warm-run medians of seven
+repetitions after two warmups:
+
+| Model | Features | skgrad | Central differences | Speedup |
+|---|---:|---:|---:|---:|
+| LogisticRegression | 10 | 0.009 ms | 0.117 ms | 13.8× |
+| LogisticRegression | 100 | 0.011 ms | 1.769 ms | 167.8× |
+| LogisticRegression | 1,000 | 0.078 ms | 74.022 ms | 954.6× |
+| MLPRegressor `(64, 64)`, tanh | 10 | 0.085 ms | 1.167 ms | 13.7× |
+| MLPRegressor `(64, 64)`, tanh | 100 | 0.213 ms | 23.023 ms | 108.1× |
+| MLPRegressor `(64, 64)`, tanh | 1,000 | 0.480 ms | 634.666 ms | 1,322.6× |
+
+The numerical method perturbs one feature at a time but evaluates all 100 rows
+in one model call, so it retains the estimator's batch efficiency. Its linear
+growth in model evaluations with feature count is inherent to generic central
+differences. The complete benchmark, including deterministic model generation
+and environment reporting, is in
+[`benchmarks/numerical_gradients.py`](benchmarks/numerical_gradients.py). 'skgrad' is faster than numerical gradients by a factor of roughly $p$, the number of features in the model. 
+
+### Speed versus PyTorch autodiff
+
+PyTorch CPU autodiff provides a more demanding speed comparison for MLPs
+because, like `skgrad`, it obtains all feature derivatives in one reverse pass.
 
 The following controlled benchmark used the same 20-input, two-hidden-layer
 `(64, 64)` tanh network, weights, biases, float64 inputs, and scalar output in
@@ -131,8 +185,11 @@ intra-operation CPU threads. `skgrad` used its automatic row-parallel policy:
 | 10,000 | 4 | 5.562 ms | 6.909 ms | skgrad 1.24× faster |
 | 100,000 | 4 | 51.016 ms | 60.631 ms | skgrad 1.19× faster |
 
-The benchmark ran on an Apple-silicon macOS laptop with Python 3.13, NumPy
-2.4.6, scikit-learn 1.9.0, and PyTorch 2.12.0. Results will vary with network
+In this like-for-like comparison, 'skgrad' has effectively the same speed as 'PyTorch'. 
+
+Both sets of benchmarks ran on an Apple-silicon macOS laptop with Python 3.13,
+NumPy 2.4.6, and scikit-learn 1.9.0. The autodiff benchmark additionally used
+PyTorch 2.12.0. Results will vary with network
 shape, activation, dtype, CPU, BLAS implementation, and thread configuration;
 the table is a transparent reference point rather than a universal performance
 guarantee. It does not compare GPU execution.
