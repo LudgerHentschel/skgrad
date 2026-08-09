@@ -168,7 +168,7 @@ in one model call, so it retains the estimator's batch efficiency. Its linear
 growth in model evaluations with feature count is inherent to generic central
 differences. The complete benchmark, including deterministic model generation
 and environment reporting, is in
-[`benchmarks/numerical_gradients.py`](benchmarks/numerical_gradients.py). 'skgrad' is faster than numerical gradients by a factor of roughly $p$, the number of features in the model. 
+[`benchmarks/numerical_gradients.py`](benchmarks/numerical_gradients.py). `skgrad` is faster than numerical gradients by a factor of roughly $p$, the number of features in the model. 
 
 ### Speed versus PyTorch autodiff
 
@@ -192,7 +192,7 @@ intra-operation CPU threads. `skgrad` used its automatic row-parallel policy:
 | 10,000 | 4 | 5.562 ms | 6.909 ms | skgrad 1.24× faster |
 | 100,000 | 4 | 51.016 ms | 60.631 ms | skgrad 1.19× faster |
 
-In this like-for-like comparison, 'skgrad' has effectively the same speed as 'PyTorch'. 
+In this like-for-like comparison, `skgrad` has effectively the same speed as `PyTorch`. 
 
 Both sets of benchmarks ran on an Apple-silicon macOS laptop with Python 3.13,
 NumPy 2.4.6, and scikit-learn 1.9.0. The autodiff benchmark additionally used
