@@ -78,7 +78,10 @@ gradient vectors computed by the same matrix operations.
 | Family | Models | Differentiated output |
 |---|---|---|
 | Linear regression | `LinearRegression`, `Ridge`, `Lasso`, `ElasticNet` | Prediction |
-| Linear classification | `LogisticRegression`, `RidgeClassifier` | Decision score |
+| Linear classification | `LogisticRegression`, `RidgeClassifier`, `LinearSVC` | Decision score |
+| Linear support-vector regression | `LinearSVR` | Prediction |
+| Kernel support-vector regression | `SVR`, `NuSVR` | Prediction |
+| Binary kernel classification | `SVC`, `NuSVC` | Decision score |
 | Neural-network regression | `MLPRegressor` with squared-error or Poisson loss | Prediction, including the Poisson exponential output link |
 | Neural-network classification | `MLPClassifier` | Binary or multiclass logits before logistic/softmax |
 
@@ -86,6 +89,10 @@ MLP hidden activations may be identity, logistic, tanh, or ReLU. At ReLU's
 nondifferentiable origin, `skgrad` uses a zero derivative, matching
 scikit-learn's backpropagation convention. Scalar and multi-output regression,
 binary classification, and multiclass classification are supported.
+
+Kernel SVMs support scikit-learn's `linear`, `poly`, `rbf`, and `sigmoid`
+kernels. Multiclass kernel classifiers, callable kernels, and precomputed
+kernels are not currently supported.
 
 Tree models are intentionally excluded. Their predictions are piecewise
 constant, so ordinary gradients are zero almost everywhere and undefined at

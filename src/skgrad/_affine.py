@@ -12,6 +12,7 @@ from sklearn.linear_model import (
     Ridge,
     RidgeClassifier,
 )
+from sklearn.svm import LinearSVC, LinearSVR
 from sklearn.utils.validation import check_is_fitted
 
 
@@ -23,6 +24,8 @@ _AFFINE_TYPES = (
     ElasticNet,
     LogisticRegression,
     RidgeClassifier,
+    LinearSVC,
+    LinearSVR,
 )
 
 

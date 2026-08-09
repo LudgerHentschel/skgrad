@@ -14,7 +14,8 @@ Regressors return their fitted prediction output. Binary classifiers expose
 one score for the positive class. Multiclass classifiers expose one score per
 class in `model.classes_` order. Logistic regression returns its decision
 function; MLP classifiers return logits before the logistic or softmax output
-activation. Probabilities are deliberately not part of V1.
+activation. Binary support-vector classifiers return their decision score.
+Probabilities are deliberately not part of V1.
 
 MLP Jacobians are composed analytically through fitted weight matrices and
 activation derivatives. ReLU's derivative is defined as zero at the origin.

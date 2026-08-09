@@ -13,6 +13,12 @@ from ._mlp import (
     mlp_supports,
     mlp_value_and_jacobian,
 )
+from ._svm import (
+    svm_constant_jacobian,
+    svm_model_output,
+    svm_supports,
+    svm_value_and_jacobian,
+)
 
 
 FloatArray = NDArray[np.floating]
@@ -34,7 +40,7 @@ class GradientProperties(NamedTuple):
 def supports(model: object) -> bool:
     """Return whether skgrad has an analytic backend for ``model``."""
 
-    return affine_supports(model) or mlp_supports(model)
+    return affine_supports(model) or svm_supports(model) or mlp_supports(model)
 
 
 def gradient_properties(model: object) -> GradientProperties:
@@ -42,6 +48,8 @@ def gradient_properties(model: object) -> GradientProperties:
 
     if affine_supports(model):
         return GradientProperties(constant_jacobian=True)
+    if svm_supports(model):
+        return GradientProperties(constant_jacobian=svm_constant_jacobian(model))
     if mlp_supports(model):
         return GradientProperties(constant_jacobian=False)
     raise TypeError(f"skgrad does not support {type(model).__name__}")
@@ -58,6 +66,8 @@ def value_and_jacobian(model: object, X: object) -> GradientResult:
     data = normalize_data(X)
     if affine_supports(model):
         values, jacobian = affine_value_and_jacobian(model, data)
+    elif svm_supports(model):
+        values, jacobian = svm_value_and_jacobian(model, data)
     elif mlp_supports(model):
         values, jacobian = mlp_value_and_jacobian(model, data)
     else:
@@ -71,6 +81,8 @@ def model_output(model: object, X: object) -> FloatArray:
     data = normalize_data(X)
     if affine_supports(model):
         return affine_model_output(model, data)
+    if svm_supports(model):
+        return svm_model_output(model, data)
     if mlp_supports(model):
         return mlp_model_output(model, data)
     raise TypeError(f"skgrad does not support {type(model).__name__}")

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add analytic gradients for `LinearSVC`, `LinearSVR`, and binary or regression
+  `SVC`, `NuSVC`, `SVR`, and `NuSVR` models using built-in kernels.
 - Speed up selected-output MLP input gradients with a two-dimensional reverse
   pass while retaining the complete-Jacobian APIs.
 - Parallelize selected-output MLP gradients across large sample batches with a

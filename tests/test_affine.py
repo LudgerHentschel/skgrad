@@ -8,6 +8,7 @@ from sklearn.linear_model import (
     Ridge,
     RidgeClassifier,
 )
+from sklearn.svm import LinearSVC, LinearSVR
 
 import skgrad
 
@@ -26,6 +27,7 @@ def _regression_data():
         Ridge(alpha=0.7),
         Lasso(alpha=0.01, max_iter=5000),
         ElasticNet(alpha=0.01, l1_ratio=0.4, max_iter=5000),
+        LinearSVR(max_iter=5000),
     ],
 )
 def test_affine_regression_values_and_jacobian(model):
@@ -43,7 +45,10 @@ def test_affine_regression_values_and_jacobian(model):
     assert skgrad.supports(model)
 
 
-@pytest.mark.parametrize("model", [LogisticRegression(), RidgeClassifier(alpha=0.5)])
+@pytest.mark.parametrize(
+    "model",
+    [LogisticRegression(), RidgeClassifier(alpha=0.5), LinearSVC(max_iter=5000)],
+)
 def test_binary_classification_returns_decision_score(model):
     X, score = _regression_data()
     y = (score > np.median(score)).astype(int)
