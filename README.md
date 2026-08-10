@@ -116,8 +116,9 @@ not training losses with respect to fitted parameters.
 - Classification probabilities are deliberately not differentiated. Scores
   and logits compose cleanly with downstream attribution methods and avoid the
   redundant common direction of multiclass probabilities.
-- Float32 MLP inputs and weights remain float32. Mixed float32/float64
-  calculations follow scikit-learn's promotion behavior.
+- Affine models and MLPs follow NumPy/scikit-learn dtype promotion, preserving
+  float32 when the input and fitted parameters are both float32. Scikit-learn's
+  LibSVM estimators use float64 fitted parameters and outputs.
 
 See [the shape and output semantics](https://github.com/LudgerHentschel/skgrad/blob/main/docs/semantics.md)
 for the complete contract.
@@ -179,20 +180,23 @@ The following controlled benchmark used the same 20-input, two-hidden-layer
 `(64, 64)` tanh network, weights, biases, float64 inputs, and scalar output in
 scikit-learn/skgrad and PyTorch. Predictions and gradients agreed to floating-
 point precision. Timings are warm-run medians for gradient calculation only;
-fitting, model conversion, and weight copying were excluded. PyTorch used four
-intra-operation CPU threads. `skgrad` used its automatic row-parallel policy:
+fitting, model conversion, and weight copying were excluded. Each median uses
+25 repetitions after five warmups. PyTorch used four intra-operation CPU
+threads. `skgrad` used its automatic row-parallel policy:
 
 | Sample rows | skgrad workers | skgrad | PyTorch autodiff | Relative result |
 |---:|---:|---:|---:|---:|
-| 1 | 1 | 0.011 ms | 0.033 ms | skgrad 3.00× faster |
-| 10 | 1 | 0.024 ms | 0.048 ms | skgrad 1.99× faster |
-| 100 | 1 | 0.122 ms | 0.163 ms | skgrad 1.33× faster |
-| 1,000 | 1 | 1.166 ms | 0.741 ms | PyTorch 1.57× faster |
-| 5,000 | 2 | 4.378 ms | 3.301 ms | PyTorch 1.33× faster |
-| 10,000 | 4 | 5.562 ms | 6.909 ms | skgrad 1.24× faster |
-| 100,000 | 4 | 51.016 ms | 60.631 ms | skgrad 1.19× faster |
+| 1 | 1 | 0.012 ms | 0.039 ms | skgrad 3.31× faster |
+| 10 | 1 | 0.024 ms | 0.052 ms | skgrad 2.19× faster |
+| 100 | 1 | 0.137 ms | 0.175 ms | skgrad 1.28× faster |
+| 1,000 | 1 | 0.759 ms | 0.680 ms | PyTorch 1.12× faster |
+| 5,000 | 2 | 3.398 ms | 2.679 ms | PyTorch 1.27× faster |
+| 10,000 | 2 | 6.498 ms | 5.425 ms | PyTorch 1.20× faster |
+| 100,000 | 2 | 54.462 ms | 51.697 ms | PyTorch 1.05× faster |
 
-In this like-for-like comparison, `skgrad` has effectively the same speed as `PyTorch`. 
+In this like-for-like comparison, `skgrad` has effectively the same speed as
+PyTorch. The complete benchmark and deterministic model construction are in
+[`benchmarks/pytorch_autodiff.py`](benchmarks/pytorch_autodiff.py).
 
 Both sets of benchmarks ran on an Apple-silicon macOS laptop with Python 3.13,
 NumPy 2.4.6, and scikit-learn 1.9.0. The autodiff benchmark additionally used

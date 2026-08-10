@@ -17,5 +17,9 @@ function; MLP classifiers return logits before the logistic or softmax output
 activation. Binary support-vector classifiers return their decision score.
 Probabilities are deliberately not part of V1.
 
+Affine models and MLPs follow NumPy/scikit-learn dtype promotion and preserve
+float32 when inputs and fitted parameters are both float32. Scikit-learn's
+LibSVM estimators use float64 fitted parameters and outputs.
+
 MLP Jacobians are composed analytically through fitted weight matrices and
 activation derivatives. ReLU's derivative is defined as zero at the origin.

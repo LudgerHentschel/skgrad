@@ -11,6 +11,8 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.utils.validation import check_is_fitted
 from threadpoolctl import threadpool_info
 
+from ._inputs import validate_target
+
 
 FloatArray = NDArray[np.floating]
 _PARALLEL_MIN_SAMPLES = 5_000
@@ -91,7 +93,7 @@ def _mlp_input_gradient_serial(
 ) -> FloatArray:
     activation, hidden_outputs = _forward_hidden(model, X)
     output_weights = np.asarray(model.coefs_[-1])
-    target_index = _target_index(output_weights.shape[1], target)
+    target_index = validate_target(output_weights.shape[1], target)
     gradient_dtype = np.result_type(X.dtype, output_weights.dtype)
     output_gradient = output_weights[:, target_index].astype(
         gradient_dtype, copy=False
@@ -169,18 +171,6 @@ def _parallel_executor() -> ThreadPoolExecutor:
                 )
                 _PARALLEL_EXECUTOR_PID = process_id
     return _PARALLEL_EXECUTOR
-
-
-def _target_index(n_outputs: int, target: Optional[int]) -> int:
-    if target is None:
-        if n_outputs != 1:
-            raise ValueError("target is required when the model has multiple outputs")
-        return 0
-    if not isinstance(target, int) or isinstance(target, bool):
-        raise TypeError("target must be an integer or None")
-    if target < 0 or target >= n_outputs:
-        raise ValueError(f"target must be between 0 and {n_outputs - 1}, got {target}")
-    return target
 
 
 def _forward_hidden(

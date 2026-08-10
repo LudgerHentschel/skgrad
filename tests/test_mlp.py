@@ -168,6 +168,12 @@ def test_fast_mlp_gradient_preserves_target_validation():
         skgrad.input_gradient(model, training[:2], target=True)
     with pytest.raises(ValueError, match="between"):
         skgrad.input_gradient(model, training[:2], target=2)
+    np.testing.assert_allclose(
+        skgrad.input_gradient(model, training[:2], target=np.int64(1)),
+        skgrad.input_gradient(model, training[:2], target=1),
+    )
+    with pytest.raises(TypeError, match="integer"):
+        skgrad.input_gradient(model, training[:2], target=np.bool_(True))
 
 
 @pytest.mark.filterwarnings("ignore::sklearn.exceptions.ConvergenceWarning")

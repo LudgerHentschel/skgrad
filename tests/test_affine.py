@@ -93,3 +93,30 @@ def test_multioutput_ridge_shape_contract():
     assert jacobian.shape == (4, 2, 4)
     np.testing.assert_allclose(values, model.predict(X[:4]))
     np.testing.assert_allclose(jacobian[0], model.coef_)
+
+
+@pytest.mark.parametrize("model_cls", [LinearRegression, Ridge])
+def test_multioutput_without_intercept_broadcasts_scalar_intercept(model_cls):
+    X, y = _regression_data()
+    targets = np.column_stack((y, -0.5 * y))
+    model = model_cls(fit_intercept=False).fit(X, targets)
+    assert np.asarray(model.intercept_).size == 1
+
+    values, jacobian = skgrad.value_and_jacobian(model, X[:4])
+
+    assert values.shape == (4, 2)
+    assert jacobian.shape == (4, 2, 4)
+    np.testing.assert_allclose(values, model.predict(X[:4]))
+
+
+def test_float32_affine_model_preserves_dtype():
+    rng = np.random.default_rng(31)
+    X = rng.normal(size=(40, 3)).astype(np.float32)
+    y = (1.5 * X[:, 0] - 0.7 * X[:, 1]).astype(np.float32)
+    model = LinearRegression().fit(X, y)
+
+    values, jacobian = skgrad.value_and_jacobian(model, X[:5])
+
+    assert model.coef_.dtype == np.float32
+    assert values.dtype == model.predict(X[:5]).dtype == np.float32
+    assert jacobian.dtype == np.float32

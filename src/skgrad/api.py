@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ._affine import affine_model_output, affine_supports, affine_value_and_jacobian
-from ._inputs import normalize_data
+from ._inputs import normalize_data, validate_target
 from ._mlp import (
     mlp_input_gradient,
     mlp_model_output,
@@ -105,17 +105,5 @@ def input_gradient(
         return mlp_input_gradient(model, normalize_data(X), target)
 
     jacobian = input_jacobian(model, X)
-    n_outputs = jacobian.shape[1]
-    if target is None:
-        if n_outputs != 1:
-            raise ValueError("target is required when the model has multiple outputs")
-        target_index = 0
-    else:
-        if not isinstance(target, int) or isinstance(target, bool):
-            raise TypeError("target must be an integer or None")
-        if target < 0 or target >= n_outputs:
-            raise ValueError(
-                f"target must be between 0 and {n_outputs - 1}, got {target}"
-            )
-        target_index = target
+    target_index = validate_target(jacobian.shape[1], target)
     return jacobian[:, target_index, :]

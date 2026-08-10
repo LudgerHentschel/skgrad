@@ -37,6 +37,9 @@ def test_svm_regression_matches_prediction_and_finite_difference(estimator, kern
 
     np.testing.assert_allclose(values[:, 0], model.predict(data), atol=1e-12)
     np.testing.assert_allclose(
+        skgrad.model_output(model, data)[:, 0], model.predict(data), atol=1e-10
+    )
+    np.testing.assert_allclose(
         jacobian[:, 0, :],
         _finite_difference(model.predict, data),
         rtol=2e-6,
@@ -55,6 +58,11 @@ def test_binary_svm_matches_decision_score_and_finite_difference(estimator, kern
     values, jacobian = skgrad.value_and_jacobian(model, data)
 
     np.testing.assert_allclose(values[:, 0], model.decision_function(data), atol=1e-12)
+    np.testing.assert_allclose(
+        skgrad.model_output(model, data)[:, 0],
+        model.decision_function(data),
+        atol=1e-10,
+    )
     np.testing.assert_allclose(
         jacobian[:, 0, :],
         _finite_difference(model.decision_function, data),

@@ -43,14 +43,14 @@ def affine_value_and_jacobian(
         coefficients,
         (X.shape[0], coefficients.shape[0], coefficients.shape[1]),
     ).copy()
-    return np.asarray(values, dtype=float), jacobian
+    return np.asarray(values), jacobian
 
 
 def affine_model_output(model: object, X: FloatArray) -> FloatArray:
     """Return affine predictions or decision scores without a Jacobian."""
 
     coefficients, intercept = _parameters(model, X)
-    return np.asarray(X @ coefficients.T + intercept, dtype=float)
+    return np.asarray(X @ coefficients.T + intercept)
 
 
 def _parameters(model: object, X: FloatArray) -> Tuple[FloatArray, FloatArray]:
@@ -59,10 +59,11 @@ def _parameters(model: object, X: FloatArray) -> Tuple[FloatArray, FloatArray]:
     if X.shape[1] != n_features:
         raise ValueError(f"X has {X.shape[1]} features; model expects {n_features}")
 
-    coefficients = np.asarray(model.coef_, dtype=float)
+    dtype = np.result_type(X.dtype, model.coef_.dtype)
+    coefficients = np.asarray(model.coef_, dtype=dtype)
     if coefficients.ndim == 1:
         coefficients = coefficients.reshape(1, -1)
-    intercept = np.asarray(model.intercept_, dtype=float).reshape(-1)
+    intercept = np.asarray(model.intercept_, dtype=dtype).reshape(-1)
     if intercept.size == 1 and coefficients.shape[0] > 1:
         intercept = np.repeat(intercept, coefficients.shape[0])
     return coefficients, intercept

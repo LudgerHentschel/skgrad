@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Accept NumPy integer output targets, report sparse inputs clearly, and
+  preserve float32 outputs and gradients for float32 affine models.
+- Add the script that reproduces the README comparison with PyTorch autodiff.
 - Add analytic gradients for `LinearSVC`, `LinearSVR`, and binary or regression
   `SVC`, `NuSVC`, `SVR`, and `NuSVR` models using built-in kernels.
 - Speed up selected-output MLP input gradients with a two-dimensional reverse
