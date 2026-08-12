@@ -196,6 +196,7 @@ def test_large_mlp_gradient_parallel_path_matches_full_jacobian(monkeypatch):
 
 
 def test_parallel_worker_heuristic_is_bounded(monkeypatch):
+    _mlp._parallel_capacity.cache_clear()
     monkeypatch.setattr(_mlp.os, "cpu_count", lambda: 16)
     monkeypatch.setattr(
         _mlp,
@@ -212,6 +213,7 @@ def test_parallel_worker_heuristic_is_bounded(monkeypatch):
         "threadpool_info",
         lambda: [{"user_api": "blas", "num_threads": 8}],
     )
+    _mlp._parallel_capacity.cache_clear()
     assert _mlp._parallel_worker_count(10_000) == 2
 
     monkeypatch.setattr(_mlp.os, "cpu_count", lambda: 2)
@@ -220,7 +222,9 @@ def test_parallel_worker_heuristic_is_bounded(monkeypatch):
         "threadpool_info",
         lambda: [{"user_api": "blas", "num_threads": 2}],
     )
+    _mlp._parallel_capacity.cache_clear()
     assert _mlp._parallel_worker_count(10_000) == 1
+    _mlp._parallel_capacity.cache_clear()
 
 
 @pytest.mark.parametrize("activation", ["identity", "logistic", "tanh", "relu"])

@@ -41,8 +41,10 @@ def test_support_is_unified_and_gradient_properties_enable_optimization():
 
     assert skgrad.supports(affine)
     assert skgrad.gradient_properties(affine).constant_jacobian
+    assert skgrad.gradient_properties(affine).exact_quadrature_steps == 1
     assert skgrad.supports(mlp)
     assert not skgrad.gradient_properties(mlp).constant_jacobian
+    assert skgrad.gradient_properties(mlp).exact_quadrature_steps is None
     assert not skgrad.supports(tree)
     with pytest.raises(TypeError, match="does not support"):
         skgrad.gradient_properties(tree)

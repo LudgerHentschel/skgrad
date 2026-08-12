@@ -1,6 +1,7 @@
 """Analytic composition through fitted scikit-learn MLPs."""
 
 from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
 import os
 from threading import Lock
 from typing import List, Optional, Tuple
@@ -28,6 +29,7 @@ def _reset_parallel_state_after_fork() -> None:
     _PARALLEL_EXECUTOR = None
     _PARALLEL_EXECUTOR_PID = None
     _PARALLEL_EXECUTOR_LOCK = Lock()
+    _parallel_capacity.cache_clear()
 
 
 if hasattr(os, "register_at_fork"):
@@ -135,6 +137,7 @@ def _parallel_worker_count(n_samples: int) -> int:
     return max(1, min(_PARALLEL_MAX_WORKERS, available_workers, useful_workers))
 
 
+@lru_cache(maxsize=1)
 def _parallel_capacity() -> int:
     """Estimate safe outer concurrency from CPUs and active BLAS threads."""
 

@@ -84,6 +84,7 @@ gradient vectors computed by the same matrix operations.
 | Binary kernel classification | `SVC`, `NuSVC` | Decision score |
 | Neural-network regression | `MLPRegressor` with squared-error or Poisson loss | Prediction, including the Poisson exponential output link |
 | Neural-network classification | `MLPClassifier` | Binary or multiclass logits before logistic/softmax |
+| Polynomial pipelines | `PolynomialFeatures`, optional post-expansion `StandardScaler`, then any supported estimator | Final estimator output, differentiated with respect to the original polynomial inputs |
 
 MLP hidden activations may be identity, logistic, tanh, or ReLU. At ReLU's
 nondifferentiable origin, `skgrad` uses a zero derivative, matching
@@ -100,8 +101,13 @@ split boundaries. Use [TreeIG](https://github.com/LudgerHentschel/treeig),
 which computes exact Integrated Gradients from the prediction jumps at tree
 split crossings.
 
-`skgrad` currently expects finite dense numeric inputs. It differentiates the
-supported fitted estimator itself; preprocessing pipelines and unsupported
+`skgrad` currently expects finite dense numeric inputs. It differentiates
+supported fitted estimators and polynomial pipelines of the form
+`PolynomialFeatures -> [optional StandardScaler] -> supported estimator`.
+Gradients are returned with respect to the inputs entering
+`PolynomialFeatures`. Scaling fitted after polynomial expansion is included in
+the chain rule; centering has zero derivative and each transformed term is
+divided by its fitted scale. Other preprocessing pipelines and unsupported
 estimators are not differentiated automatically.
 
 ## Output semantics
@@ -228,6 +234,8 @@ derivatives:
   output link, `exp(z)`.
 - **Large batches:** independent sample rows are divided among bounded workers,
   while dense matrix operations remain in optimized native numerical kernels.
+  BLAS thread-capacity discovery is cached per process so repeated gradient
+  calls, such as quadrature over many paths, do not rescan loaded libraries.
 
 This is algorithmically the same backpropagation used by autodiff for an MLP,
 but specialized to scikit-learn's fitted representation and requested output.
@@ -252,7 +260,9 @@ when one scalar output is required.
 
 `gradient_properties(model)` reports useful computational metadata. In
 particular, downstream consumers can detect constant affine Jacobians and
-avoid redundant evaluations.
+avoid redundant evaluations. `exact_quadrature_steps` also reports when a
+supported polynomial pipeline with an affine downstream estimator has a known
+finite Gauss–Legendre order for exact straight-path gradient integration.
 
 ## Scope
 
