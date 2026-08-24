@@ -10,7 +10,7 @@
 `skgrad` differentiates a fitted model's prediction with respect to its input
 features. It provides one NumPy-based interface for supported linear models,
 classifiers, and multilayer perceptrons without finite differences, model
-conversion, or an automatic-differentiation framework.
+conversion, or an automatic-differentiation framework. However, the method resembles automatic differentiation by using available information about analytical gradients in order to greatly speed the differentiation. `skgrad` only uses numerical differentiation as a fallback method for unsupported `sklearn` models. 
 
 ```python
 gradient = skgrad.input_gradient(model, X)
