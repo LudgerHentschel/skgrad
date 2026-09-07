@@ -1,9 +1,10 @@
 # skgrad
 
 [![Tests](https://github.com/LudgerHentschel/skgrad/actions/workflows/tests.yml/badge.svg)](https://github.com/LudgerHentschel/skgrad/actions/workflows/tests.yml)
+[![Documentation](https://img.shields.io/badge/docs-online-blue.svg)](https://ludgerhentschel.github.io/skgrad/)
 [![PyPI version](https://img.shields.io/pypi/v/skgrad.svg)](https://pypi.org/project/skgrad/)
 [![Python versions](https://img.shields.io/pypi/pyversions/skgrad.svg)](https://pypi.org/project/skgrad/)
-[![License](https://img.shields.io/pypi/l/skgrad.svg)](https://github.com/LudgerHentschel/skgrad/blob/main/LICENSE)
+[![License: BSD-3-Clause](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://github.com/LudgerHentschel/skgrad/blob/main/LICENSE)
 
 **Fast analytic input gradients for fitted scikit-learn models.**
 
@@ -20,8 +21,8 @@ For scalar-output models, `gradient[i, j]` is the derivative of prediction `i`
 with respect to feature `j`. Multi-output models expose one gradient per target
 or the complete input Jacobian.
 
-Read the [documentation](https://ludgerhentschel.github.io/skgrad/) for worked
-examples, the API contract, model coverage, and numerical conventions.
+Read the **[skgrad documentation](https://ludgerhentschel.github.io/skgrad/)** for
+worked examples, the API contract, model coverage, and numerical conventions.
 
 ## Installation
 
