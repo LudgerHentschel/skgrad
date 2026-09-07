@@ -2,6 +2,8 @@
 
 from importlib.metadata import PackageNotFoundError, version
 
+from ._view import PipelineView, pipeline_view
+
 from .api import (
     GradientProperties,
     GradientResult,
@@ -14,6 +16,8 @@ from .api import (
 )
 
 __all__ = [
+    "PipelineView",
+    "pipeline_view",
     "GradientProperties",
     "GradientResult",
     "gradient_properties",

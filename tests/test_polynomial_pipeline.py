@@ -110,8 +110,8 @@ def test_pipeline_support_is_deliberately_narrow():
 
     assert skgrad.supports(supported)
     assert skgrad.supports(scaled_terms)
-    assert not skgrad.supports(scaled_inputs)
-    assert not skgrad.supports(unrelated)
+    assert skgrad.supports(scaled_inputs)
+    assert skgrad.supports(unrelated)
     assert not skgrad.gradient_properties(supported).constant_jacobian
     assert skgrad.gradient_properties(supported).exact_quadrature_steps == 1
     assert skgrad.gradient_properties(scaled_terms).exact_quadrature_steps == 1
@@ -127,3 +127,11 @@ def test_polynomial_pipeline_reports_exact_quadrature_order():
     assert skgrad.gradient_properties(cubic).exact_quadrature_steps == 2
     assert skgrad.gradient_properties(quartic).exact_quadrature_steps == 2
     assert skgrad.gradient_properties(nonlinear_downstream).exact_quadrature_steps is None
+
+
+def test_constant_polynomial_has_valid_quadrature_order():
+    model = make_pipeline(PolynomialFeatures(0), Ridge())
+    order = skgrad.gradient_properties(model).exact_quadrature_steps
+    nodes, weights = np.polynomial.legendre.leggauss(order)
+    assert len(nodes) == 1
+    np.testing.assert_allclose(weights.sum(), 2.0)

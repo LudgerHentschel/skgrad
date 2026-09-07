@@ -10,7 +10,7 @@
 `skgrad` differentiates a fitted model's prediction with respect to its input
 features. It provides one NumPy-based interface for supported linear models,
 classifiers, and multilayer perceptrons without finite differences, model
-conversion, or an automatic-differentiation framework. However, the method resembles automatic differentiation by using available information about analytical gradients in order to greatly speed the differentiation. `skgrad` only uses numerical differentiation as a fallback method for unsupported `sklearn` models. 
+conversion, or an automatic-differentiation framework. Unsupported estimators raise `TypeError`; there is no numerical fallback.
 
 ```python
 gradient = skgrad.input_gradient(model, X)
@@ -19,6 +19,9 @@ gradient = skgrad.input_gradient(model, X)
 For scalar-output models, `gradient[i, j]` is the derivative of prediction `i`
 with respect to feature `j`. Multi-output models expose one gradient per target
 or the complete input Jacobian.
+
+Read the [documentation](https://ludgerhentschel.github.io/skgrad/) for worked
+examples, the API contract, model coverage, and numerical conventions.
 
 ## Installation
 
@@ -66,7 +69,7 @@ gradient = skgrad.input_gradient(model, X_eval, target=1)
 
 Use `skgrad.supports(model)` to check model coverage before calculation.
 
-![A one-dimensional fitted ReLU network and its exact input gradients](docs/relu-analytic-gradients.svg)
+![A one-dimensional fitted ReLU network and its exact input gradients](https://raw.githubusercontent.com/LudgerHentschel/skgrad/main/docs/relu-analytic-gradients.png)
 
 For a ReLU MLP, a forward pass identifies the active hidden units at each
 input. Their known slopes and fitted weights then combine in a batched reverse
@@ -84,7 +87,7 @@ gradient vectors computed by the same matrix operations.
 | Binary kernel classification | `SVC`, `NuSVC` | Decision score |
 | Neural-network regression | `MLPRegressor` with squared-error or Poisson loss | Prediction, including the Poisson exponential output link |
 | Neural-network classification | `MLPClassifier` | Binary or multiclass logits before logistic/softmax |
-| Polynomial pipelines | `PolynomialFeatures`, optional post-expansion `StandardScaler`, then any supported estimator | Final estimator output, differentiated with respect to the original polynomial inputs |
+| Continuous pipelines | Supported scalers, polynomial expansion, PCA, and fitted feature selectors, then any supported estimator | Final estimator output, differentiated with respect to pipeline input features |
 
 MLP hidden activations may be identity, logistic, tanh, or ReLU. At ReLU's
 nondifferentiable origin, `skgrad` uses a zero derivative, matching
@@ -101,14 +104,14 @@ split boundaries. Use [TreeIG](https://github.com/LudgerHentschel/treeig),
 which computes exact Integrated Gradients from the prediction jumps at tree
 split crossings.
 
-`skgrad` currently expects finite dense numeric inputs. It differentiates
-supported fitted estimators and polynomial pipelines of the form
-`PolynomialFeatures -> [optional StandardScaler] -> supported estimator`.
-Gradients are returned with respect to the inputs entering
-`PolynomialFeatures`. Scaling fitted after polynomial expansion is included in
-the chain rule; centering has zero derivative and each transformed term is
-divided by its fitted scale. Other preprocessing pipelines and unsupported
-estimators are not differentiated automatically.
+`skgrad` expects finite dense numeric inputs. Sequential and nested sklearn
+pipelines may combine `StandardScaler`, `RobustScaler`, `MaxAbsScaler`,
+`MinMaxScaler`, `PolynomialFeatures`, `PCA`, and supported fitted feature
+selectors before a supported estimator. Gradients refer to the inputs of the
+supplied pipeline, including every supported preprocessing chain rule.
+Unknown transformers reject the entire analytic route; preprocessing is never
+silently removed. See [pipeline conventions](https://ludgerhentschel.github.io/skgrad/pipelines.html)
+for clipping, whitening, feature selection, and attribution coordinates.
 
 ## Output semantics
 
@@ -175,7 +178,7 @@ in one model call, so it retains the estimator's batch efficiency. Its linear
 growth in model evaluations with feature count is inherent to generic central
 differences. The complete benchmark, including deterministic model generation
 and environment reporting, is in
-[`benchmarks/numerical_gradients.py`](benchmarks/numerical_gradients.py). `skgrad` is faster than numerical gradients by a factor of roughly $p$, the number of features in the model. 
+[`benchmarks/numerical_gradients.py`](https://github.com/LudgerHentschel/skgrad/blob/main/benchmarks/numerical_gradients.py). The speedup generally grows with feature count; its magnitude depends on the model and runtime environment.
 
 ### Speed versus PyTorch autodiff
 
@@ -202,7 +205,7 @@ threads. `skgrad` used its automatic row-parallel policy:
 
 In this like-for-like comparison, `skgrad` has effectively the same speed as
 PyTorch. The complete benchmark and deterministic model construction are in
-[`benchmarks/pytorch_autodiff.py`](benchmarks/pytorch_autodiff.py).
+[`benchmarks/pytorch_autodiff.py`](https://github.com/LudgerHentschel/skgrad/blob/main/benchmarks/pytorch_autodiff.py).
 
 Both sets of benchmarks ran on an Apple-silicon macOS laptop with Python 3.13,
 NumPy 2.4.6, and scikit-learn 1.9.0. The autodiff benchmark additionally used
@@ -273,7 +276,7 @@ narrow scope keeps it useful as a small computational backend that other
 packages can compose.
 
 The project is licensed under the
-[MIT License](https://github.com/LudgerHentschel/skgrad/blob/main/LICENSE).
+[BSD 3-Clause License](https://github.com/LudgerHentschel/skgrad/blob/main/LICENSE).
 
 ## Unified IG
 
@@ -283,3 +286,7 @@ smooth scikit-learn models, TreeIG for tree paths, and automatic or numerical
 backends for other model families, presenting them through one Integrated
 Gradients interface. Use Unified IG when the goal is feature attribution rather
 than direct access to model input gradients.
+
+[CBaseline](https://github.com/LudgerHentschel/cbaseline) constructs reference
+baseline distributions; `skgrad` supplies analytic input derivatives; TreeIG
+handles tree paths; UnifiedIG composes these components into attributions.

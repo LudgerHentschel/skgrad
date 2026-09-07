@@ -90,3 +90,13 @@ def test_multiclass_and_user_defined_kernels_are_not_supported():
     assert not skgrad.supports(precomputed)
     with pytest.raises(TypeError, match="does not support"):
         skgrad.input_gradient(multiclass, X[:2])
+
+
+def test_rbf_output_is_stable_with_large_common_offset():
+    X = 1e8 + np.arange(12, dtype=float).reshape(-1, 1)
+    model = SVR(kernel="rbf", gamma=1).fit(X, np.sin(np.arange(12)))
+    values = skgrad.model_output(model, X)[:, 0]
+    np.testing.assert_allclose(values, model.predict(X), atol=1e-12)
+    np.testing.assert_allclose(
+        values, skgrad.value_and_jacobian(model, X).values[:, 0], atol=1e-12
+    )

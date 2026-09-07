@@ -14,10 +14,11 @@ from ._mlp import (
     mlp_value_and_jacobian,
 )
 from ._pipeline import (
-    polynomial_pipeline_exact_quadrature_steps,
-    polynomial_pipeline_model_output,
-    polynomial_pipeline_supports,
-    polynomial_pipeline_value_and_jacobian,
+    pipeline_properties,
+    pipeline_input_gradient,
+    pipeline_model_output,
+    pipeline_supports,
+    pipeline_value_and_jacobian,
 )
 from ._svm import (
     svm_constant_jacobian,
@@ -47,7 +48,7 @@ class GradientProperties(NamedTuple):
 def supports(model: object) -> bool:
     """Return whether skgrad has an analytic backend for ``model``."""
 
-    return _estimator_supports(model) or polynomial_pipeline_supports(
+    return _estimator_supports(model) or pipeline_supports(
         model, _estimator_supports
     )
 
@@ -67,12 +68,9 @@ def gradient_properties(model: object) -> GradientProperties:
         return GradientProperties(
             constant_jacobian=False, exact_quadrature_steps=None
         )
-    if polynomial_pipeline_supports(model, _estimator_supports):
+    if pipeline_supports(model, _estimator_supports):
         return GradientProperties(
-            constant_jacobian=False,
-            exact_quadrature_steps=polynomial_pipeline_exact_quadrature_steps(
-                model, _estimator_constant_jacobian
-            ),
+            *pipeline_properties(model, _estimator_constant_jacobian)
         )
     raise TypeError(f"skgrad does not support {type(model).__name__}")
 
@@ -92,8 +90,8 @@ def value_and_jacobian(model: object, X: object) -> GradientResult:
         values, jacobian = svm_value_and_jacobian(model, data)
     elif mlp_supports(model):
         values, jacobian = mlp_value_and_jacobian(model, data)
-    elif polynomial_pipeline_supports(model, _estimator_supports):
-        values, jacobian = polynomial_pipeline_value_and_jacobian(
+    elif pipeline_supports(model, _estimator_supports):
+        values, jacobian = pipeline_value_and_jacobian(
             model, data, _estimator_value_and_jacobian
         )
     else:
@@ -111,8 +109,8 @@ def model_output(model: object, X: object) -> FloatArray:
         return svm_model_output(model, data)
     if mlp_supports(model):
         return mlp_model_output(model, data)
-    if polynomial_pipeline_supports(model, _estimator_supports):
-        return polynomial_pipeline_model_output(model, data, _estimator_model_output)
+    if pipeline_supports(model, _estimator_supports):
+        return pipeline_model_output(model, data, _estimator_model_output)
     raise TypeError(f"skgrad does not support {type(model).__name__}")
 
 
@@ -131,6 +129,11 @@ def input_gradient(
 
     if mlp_supports(model):
         return mlp_input_gradient(model, normalize_data(X), target)
+
+    if pipeline_supports(model, _estimator_supports):
+        return pipeline_input_gradient(
+            model, normalize_data(X), target, input_gradient
+        )
 
     jacobian = input_jacobian(model, X)
     target_index = validate_target(jacobian.shape[1], target)

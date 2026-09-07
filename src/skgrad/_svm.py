@@ -4,6 +4,7 @@ from typing import Tuple
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.spatial.distance import cdist
 from sklearn.svm import NuSVC, NuSVR, SVC, SVR
 from sklearn.utils.validation import check_is_fitted
 
@@ -117,12 +118,8 @@ def _kernel_values(model: object, X: FloatArray) -> FloatArray:
             model.degree
         )
     if kernel == "rbf":
-        squared_distances = (
-            np.sum(X * X, axis=1)[:, None]
-            + np.sum(support_vectors * support_vectors, axis=1)[None, :]
-            - 2.0 * products
-        )
-        np.maximum(squared_distances, 0.0, out=squared_distances)
+        # Direct coordinate differences avoid cancellation for large offsets.
+        squared_distances = cdist(X, support_vectors, metric="sqeuclidean")
         return np.exp(-float(model._gamma) * squared_distances)
     if kernel == "sigmoid":
         return np.tanh(float(model._gamma) * products + float(model.coef0))

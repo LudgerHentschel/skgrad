@@ -2,21 +2,49 @@
 
 ## Unreleased
 
-- Accept NumPy integer output targets, report sparse inputs clearly, and
-  preserve float32 outputs and gradients for float32 affine models.
-- Add the script that reproduces the README comparison with PyTorch autodiff.
-- Add analytic gradients for `LinearSVC`, `LinearSVR`, and binary or regression
-  `SVC`, `NuSVC`, `SVR`, and `NuSVR` models using built-in kernels.
-- Speed up selected-output MLP input gradients with a two-dimensional reverse
-  pass while retaining the complete-Jacobian APIs.
-- Parallelize selected-output MLP gradients across large sample batches with a
-  bounded, hardware-aware worker heuristic.
-- Preserve scikit-learn MLP float32 and mixed-input dtype behavior in values
-  and input gradients.
-- Support the exponential output link and input gradients of Poisson-loss
-  `MLPRegressor` models.
-- Recreate the persistent MLP gradient executor after process forks and add
-  macOS and Windows CI coverage.
+## 0.1.5
+
+### Pipeline gradients and feature spaces
+
+- Compose analytic gradients through sequential and nested pipelines containing
+  supported scalers, polynomial expansion, PCA/whitening, and fitted selectors.
+  Gradients refer to the supplied pipeline's original input coordinates.
+- Add `pipeline_view(..., after="step")` for explicit transformed-feature
+  gradients, including nested boundaries and transformed feature names.
+- Preserve selected-output MLP execution and report conservative constant-Jacobian
+  and exact polynomial quadrature metadata. Degree-zero polynomials use one node.
+- Define clipped MinMax derivatives as zero at and outside boundaries; reject
+  degenerate PCA whitening explicitly.
+
+### Models, numerical behavior, and performance
+
+- Add LinearSVC, LinearSVR, and supported binary/regression kernel SVM backends.
+- Avoid cancellation in RBF outputs for inputs with large common offsets.
+- Support Poisson MLP exponential output links and preserve float32/mixed-input
+  MLP behavior and float32 affine results.
+- Optimize selected-output MLP reverse passes and large-batch row parallelism;
+  recreate the persistent executor safely after process forks.
+- Accept NumPy integer targets and improve sparse-input diagnostics.
+
+### Documentation, licensing, and release checks
+
+- Switch to BSD-3-Clause and include its SPDX metadata and license file.
+- Add Sphinx/PyData documentation, worked examples, API reference, and Pages
+  deployment. Document standalone estimators and original/transformed features.
+- Add reproducible numerical-gradient and PyTorch benchmarks. Correct the README:
+  unsupported models have no numerical fallback inside skgrad.
+- Include documentation assets in source packages and fix README links for PyPI.
+- Gate publishing on the full Python/OS test matrix, older supported dependencies,
+  strict documentation, and installed-wheel tests/examples. Test extras include
+  pandas so feature-name checks run rather than skip.
+
+### Compatibility
+
+- `GradientProperties` now contains `constant_jacobian` and
+  `exact_quadrature_steps`. Update one-argument positional construction and
+  single-item tuple unpacking from 0.1.1; prefer named-field access.
+- Historical Git tags v0.1.2–v0.1.4 retained package metadata version 0.1.1.
+  This release reconciles the changes under a matching 0.1.5 package/tag.
 
 ## 0.1.1
 

@@ -1,102 +1,180 @@
-"""Analytic chain-rule support for selected scikit-learn pipelines."""
+"""Analytic composition through explicitly supported continuous pipelines."""
 
-from typing import Callable, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
+from sklearn.decomposition import PCA
+from sklearn.feature_selection import (
+    SelectKBest, SelectPercentile, SelectFpr, SelectFdr, SelectFwe,
+    GenericUnivariateSelect, VarianceThreshold, SelectFromModel, RFE, RFECV,
+    SequentialFeatureSelector,
+)
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.preprocessing import (
+    PolynomialFeatures, StandardScaler, RobustScaler, MaxAbsScaler, MinMaxScaler,
+)
 from sklearn.utils.validation import check_is_fitted
-
 
 FloatArray = NDArray[np.floating]
 ValueJacobian = Tuple[FloatArray, FloatArray]
+History = List[Tuple[object, FloatArray]]
+_SCALERS = (StandardScaler, RobustScaler, MaxAbsScaler, MinMaxScaler)
+_SELECTORS = (
+    SelectKBest, SelectPercentile, SelectFpr, SelectFdr, SelectFwe,
+    GenericUnivariateSelect, VarianceThreshold, SelectFromModel, RFE, RFECV,
+    SequentialFeatureSelector,
+)
 
 
-def polynomial_pipeline_exact_quadrature_steps(
-    model: object,
-    downstream_constant_jacobian: Callable[[object], bool],
-) -> Optional[int]:
-    """Return the Gauss-Legendre order that exactly integrates pipeline IG."""
-
-    parts = _required_pipeline_parts(model)
-    if not downstream_constant_jacobian(parts[-1]):
-        return None
-    degree = parts[0].degree
-    maximum_degree = degree[1] if isinstance(degree, tuple) else degree
-    return (int(maximum_degree) + 1) // 2
+def _identity(step: object) -> bool:
+    return step is None or (isinstance(step, str) and step == "passthrough")
 
 
-def polynomial_pipeline_supports(
-    model: object,
-    downstream_supports: Callable[[object], bool],
+def _flatten(model: object) -> Tuple[object, ...]:
+    if type(model) is Pipeline:
+        return tuple(part for _, step in model.steps for part in _flatten(step))
+    return () if _identity(model) else (model,)
+
+
+def _transformer_supports(step: object) -> bool:
+    # Exact classes prevent custom transform overrides from inheriting an
+    # incorrect derivative. Estimator dispatch is handled separately.
+    return type(step) in _SCALERS + _SELECTORS + (PolynomialFeatures, PCA)
+
+
+def pipeline_supports(
+    model: object, downstream_supports: Callable[[object], bool]
 ) -> bool:
-    """Return whether ``model`` is a supported polynomial pipeline."""
+    if type(model) is not Pipeline or not model.steps:
+        return False
+    # A transformer-only or identity-ending Pipeline is not a predictor.
+    tail = model.steps[-1][1]
+    while type(tail) is Pipeline:
+        if not tail.steps:
+            return False
+        tail = tail.steps[-1][1]
+    if _identity(tail) or not _nonempty_pipelines(model):
+        return False
+    parts = _flatten(model)
+    return (
+        bool(parts)
+        and all(_transformer_supports(s) for s in parts[:-1])
+        and downstream_supports(parts[-1])
+    )
 
-    parts = _pipeline_parts(model)
-    return parts is not None and downstream_supports(parts[-1])
+
+def _nonempty_pipelines(model: object) -> bool:
+    if type(model) is not Pipeline:
+        return True
+    return bool(model.steps) and all(
+        _nonempty_pipelines(step) for _, step in model.steps
+    )
 
 
-def polynomial_pipeline_value_and_jacobian(
-    model: object,
-    X: FloatArray,
+def pipeline_properties(
+    model: object, downstream_constant_jacobian: Callable[[object], bool]
+) -> Tuple[bool, Optional[int]]:
+    parts = _flatten(model)
+    if not downstream_constant_jacobian(parts[-1]):
+        return False, None
+    degree = 1
+    for step in parts[:-1]:
+        if type(step) is MinMaxScaler and step.clip:
+            return False, None
+        if type(step) is PolynomialFeatures:
+            d = step.degree[1] if isinstance(step.degree, tuple) else step.degree
+            degree *= int(d)
+    return degree <= 1, max(1, (degree + 1) // 2)
+
+
+def _forward(
+    model: object, X: FloatArray
+) -> Tuple[object, FloatArray, History]:
+    parts = _flatten(model)
+    history: History = []
+    for step in parts[:-1]:
+        history.append((step, X))
+        X = np.asarray(_transform(step, X))
+    return parts[-1], X, history
+
+
+def _transform(step: object, X: object) -> object:
+    """Apply one fitted transform without modifying caller-owned input."""
+    check_is_fitted(step)
+    if type(step) is PCA and step.whiten:
+        scale = np.sqrt(step.explained_variance_)
+        if np.any(scale <= np.finfo(scale.dtype).eps):
+            raise ValueError(
+                "PCA whitening requires non-degenerate explained variance"
+            )
+    return step.transform(X.copy())
+
+
+def pipeline_value_and_jacobian(
+    model: object, X: FloatArray,
     downstream_value_and_jacobian: Callable[[object, FloatArray], ValueJacobian],
 ) -> ValueJacobian:
-    """Differentiate a polynomial pipeline with respect to its original inputs."""
-
-    parts = _required_pipeline_parts(model)
-    transformed, transform_jacobian = _polynomial_value_and_jacobian(parts[0], X)
-    if len(parts) == 3:
-        transformed, transform_jacobian = _scale_values_and_jacobian(
-            parts[1], transformed, transform_jacobian
-        )
-    values, downstream_jacobian = downstream_value_and_jacobian(
-        parts[-1], transformed
-    )
-    jacobian = np.einsum(
-        "noq,nqp->nop",
-        downstream_jacobian,
-        transform_jacobian,
-        optimize=True,
-    )
-    return values, jacobian
+    estimator, transformed, history = _forward(model, X)
+    values, jacobian = downstream_value_and_jacobian(estimator, transformed)
+    return values, _pullback(history, jacobian)
 
 
-def polynomial_pipeline_model_output(
-    model: object,
-    X: FloatArray,
+def pipeline_input_gradient(
+    model: object, X: FloatArray, target: Optional[int],
+    downstream_input_gradient: Callable[
+        [object, FloatArray, Optional[int]], FloatArray
+    ],
+) -> FloatArray:
+    estimator, transformed, history = _forward(model, X)
+    gradient = downstream_input_gradient(estimator, transformed, target)
+    return _pullback(history, gradient[:, None, :])[:, 0, :]
+
+
+def pipeline_model_output(
+    model: object, X: FloatArray,
     downstream_model_output: Callable[[object, FloatArray], FloatArray],
 ) -> FloatArray:
-    """Return downstream predictions or scores for a polynomial pipeline."""
-
-    parts = _required_pipeline_parts(model)
-    transformed = np.asarray(parts[0].transform(X))
-    if len(parts) == 3:
-        check_is_fitted(parts[1])
-        transformed = np.asarray(parts[1].transform(transformed))
-    return downstream_model_output(parts[-1], transformed)
+    estimator, transformed, _ = _forward(model, X)
+    return downstream_model_output(estimator, transformed)
 
 
-def _pipeline_parts(model: object) -> Optional[Tuple[object, ...]]:
-    if not isinstance(model, Pipeline):
-        return None
-    parts = tuple(step for _, step in model.steps)
-    if len(parts) == 2 and isinstance(parts[0], PolynomialFeatures):
-        return parts
-    if (
-        len(parts) == 3
-        and isinstance(parts[0], PolynomialFeatures)
-        and isinstance(parts[1], StandardScaler)
-    ):
-        return parts
-    return None
-
-
-def _required_pipeline_parts(model: object) -> Tuple[object, ...]:
-    parts = _pipeline_parts(model)
-    if parts is None:
-        raise TypeError(f"skgrad does not support {type(model).__name__}")
-    return parts
+def _pullback(history: History, jacobian: FloatArray) -> FloatArray:
+    for step, X in reversed(history):
+        if type(step) in _SCALERS:
+            if type(step) is StandardScaler:
+                scale = 1.0 / step.scale_ if step.with_std else 1.0
+            elif type(step) is RobustScaler:
+                scale = 1.0 / step.scale_ if step.with_scaling else 1.0
+            elif type(step) is MaxAbsScaler:
+                scale = 1.0 / step.scale_
+            else:
+                scale = step.scale_
+            # Scalers preserve their input dtype even when fitted statistics
+            # use float64 (notably StandardScaler and RobustScaler).
+            jacobian = jacobian * np.asarray(scale, dtype=jacobian.dtype)
+            if type(step) is MinMaxScaler and step.clip:
+                before_clip = X * step.scale_ + step.min_
+                interior = (
+                    (before_clip > step.feature_range[0])
+                    & (before_clip < step.feature_range[1])
+                )
+                jacobian = jacobian * interior[:, None, :]
+        elif type(step) is PCA:
+            components = step.components_
+            if step.whiten:
+                components = components / np.sqrt(step.explained_variance_)[:, None]
+            jacobian = jacobian @ components
+        elif type(step) in _SELECTORS:
+            result = np.zeros(
+                (X.shape[0], jacobian.shape[1], X.shape[1]), dtype=jacobian.dtype
+            )
+            result[:, :, step.get_support(indices=True)] = jacobian
+            jacobian = result
+        else:
+            _, local = _polynomial_value_and_jacobian(step, X)
+            jacobian = np.einsum("noq,nqp->nop", jacobian, local, optimize=True)
+    return jacobian
 
 
 def _polynomial_value_and_jacobian(
@@ -126,16 +204,3 @@ def _polynomial_value_and_jacobian(
         )
         jacobian[:, active, feature] = coefficients[None, :] * monomials
     return transformed, jacobian
-
-
-def _scale_values_and_jacobian(
-    scaler: object,
-    values: FloatArray,
-    jacobian: FloatArray,
-) -> ValueJacobian:
-    check_is_fitted(scaler)
-    scaled = np.asarray(scaler.transform(values))
-    if scaler.with_std:
-        scale = np.asarray(scaler.scale_, dtype=jacobian.dtype)
-        jacobian = jacobian / scale[None, :, None]
-    return scaled, jacobian
