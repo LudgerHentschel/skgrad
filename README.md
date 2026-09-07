@@ -197,3 +197,5 @@ than direct access to model input gradients.
 [CBaseline](https://github.com/LudgerHentschel/cbaseline) constructs reference
 baseline distributions; `skgrad` supplies analytic input derivatives; TreeIG
 handles tree paths; UnifiedIG composes these components into attributions.
+
+Release maintainers: see [Publishing releases](docs/publishing.md).

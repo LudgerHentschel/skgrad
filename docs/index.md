@@ -37,4 +37,5 @@ ig-stack
 api
 releases
 building
+publishing
 ```

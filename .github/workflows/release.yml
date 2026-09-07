@@ -5,6 +5,10 @@ on:
     tags:
       - "v*"
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -36,3 +40,36 @@ jobs:
           name: distributions
           path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: Create GitHub release
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: distributions
+          path: dist/
+      - name: Create release and attach distributions
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            flags=(--verify-tag)
+            if [[ "$GITHUB_REF_NAME" =~ (a|b|rc)[0-9]+$ ]]; then
+              flags+=(--prerelease --latest=false)
+            fi
+            gh release create "$GITHUB_REF_NAME" \
+              --generate-notes --title "$GITHUB_REF_NAME" "${flags[@]}"
+          fi
+          existing=$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name')
+          for file in dist/*; do
+            if ! grep -Fxq -- "$(basename "$file")" <<< "$existing"; then
+              gh release upload "$GITHUB_REF_NAME" "$file"
+            fi
+          done
