@@ -41,4 +41,4 @@ Continuous preprocessing composition is now supported for the transformations
 listed in [pipeline gradients](pipelines.md). ColumnTransformer composition,
 additional affine estimator families, and generalized linear output links are
 natural next steps. Kernel ridge and supported Gaussian process kernels are
-further candidates. These remain future directions for 0.1.5.
+further candidates. These remain future directions for 0.1.6.

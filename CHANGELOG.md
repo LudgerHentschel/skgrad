@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.1.6
+
+- Reject estimator subclasses overriding differentiated prediction methods across
+  affine, MLP, and kernel SVM backends; retain inherited sklearn subclasses.
+- Guard the private sklearn fitted SVM gamma dependency and add pre-release CI.
+- Preserve normalized input precision in values, gradients, and Jacobians across
+  all backends, including float32 inputs with float64 fitted parameters.
+- Report exact polynomial-kernel SVM quadrature as max(1, ceil(degree / 2)).
+- Keep ColumnTransformer composition on the roadmap for a later release.
+
 ## 0.1.5
 
 ### Pipeline gradients and feature spaces

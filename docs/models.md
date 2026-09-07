@@ -47,8 +47,17 @@ meta-estimators are also outside the current backend list. Having a `coef_`
 attribute alone does not confer support.
 
 Transformer recognition uses an explicit class list so an overridden `transform`
-method cannot silently inherit an incorrect derivative. Custom estimator
-subclasses also require care if they override prediction semantics.
+method cannot silently inherit an incorrect derivative. Estimator subclasses are accepted only when they inherit the differentiated
+prediction method unchanged, including through intermediate base classes.
+Regressors protect `predict`; score classifiers protect `decision_function`.
+MLP classifiers protect `predict` and `predict_proba` because their exposed
+logits derive from that prediction path. Overrides of these methods are refused.
+This guard does not certify arbitrary changes to fitting or private helpers.
+
+Nonlinear kernel SVMs depend on sklearn's private fitted `_gamma` attribute to
+resolve `gamma="scale"` and `gamma="auto"`. If it is unavailable, evaluation raises
+a clear compatibility error. CI tests scikit-learn pre-releases without imposing
+an upper dependency bound.
 
 See [pipeline gradients](pipelines.md) for the exact supported transformations
 and [numerical fallback policy](numerical.md) for unsupported models.

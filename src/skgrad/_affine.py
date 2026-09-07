@@ -1,5 +1,7 @@
 """Analytic Jacobians for fitted affine estimators."""
 
+from ._dispatch import inherits_prediction
+
 from typing import Tuple
 
 import numpy as np
@@ -30,7 +32,7 @@ _AFFINE_TYPES = (
 
 
 def affine_supports(model: object) -> bool:
-    return isinstance(model, _AFFINE_TYPES)
+    return inherits_prediction(model, _AFFINE_TYPES)
 
 
 def affine_value_and_jacobian(
@@ -59,7 +61,7 @@ def _parameters(model: object, X: FloatArray) -> Tuple[FloatArray, FloatArray]:
     if X.shape[1] != n_features:
         raise ValueError(f"X has {X.shape[1]} features; model expects {n_features}")
 
-    dtype = np.result_type(X.dtype, model.coef_.dtype)
+    dtype = X.dtype
     coefficients = np.asarray(model.coef_, dtype=dtype)
     if coefficients.ndim == 1:
         coefficients = coefficients.reshape(1, -1)

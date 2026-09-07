@@ -28,9 +28,12 @@ and out-of-range indexes are rejected.
 - Probabilities are not differentiated. If you compose a probability transform,
   its Jacobian must also appear in the chain rule.
 
-Affine models and MLPs preserve float32 when fitted parameters and inputs are
-both float32, following NumPy dtype promotion for mixed inputs. LibSVM models
-use float64 fitted parameters and outputs. Computations can still overflow for
+Values, gradients, and Jacobians follow normalized input precision: float32
+stays float32, float16 promotes to float32, and float64 stays float64. Fitted
+parameters are cast for evaluation without modifying the model. This includes
+LibSVM and supported pipelines; sklearn itself may return a different dtype.
+Float32 evaluation may differ from sklearn's float64 predictions by rounding.
+Use float64 inputs for high accuracy or large coordinate offsets. Computations can still overflow for
 extreme inputs or fitted parameters; finite input validation does not guarantee
 finite model outputs.
 
@@ -58,3 +61,9 @@ model gradient, not an arbitrary nonlinear loss composed afterward.
 Unsupported estimators raise `TypeError`. Unfitted supported models fail fitted
 state checks. Malformed inputs, mismatched feature counts, and invalid targets
 raise validation errors. `supports()` does not silently invoke another backend.
+
+Polynomial-kernel SVMs of degree `d` report `max(1, ceil(d / 2))`
+Gauss–Legendre nodes: their straight-path gradient has degree at most `d - 1`.
+The bound is exact in exact arithmetic; floating-point rounding still applies.
+Degenerate fitted models may need fewer nodes. Pipeline metadata remains
+conservative when the final estimator has a nonconstant Jacobian.

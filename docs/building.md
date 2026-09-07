@@ -45,20 +45,20 @@ copies tests/examples outside the checkout and removes PYTHONPATH so an editable
 source installation cannot masquerade as the wheel. Test dependencies include
 pandas to exercise DataFrame feature-name validation.
 
-## Release checklist for 0.1.5
+## Release checklist for 0.1.6
 
 1. Push the release commit to `main` and wait for Tests and Documentation to
    succeed, including the Pages deployment.
 2. In GitHub Settings → Pages, select **GitHub Actions**. In Settings →
    Environments, ensure `github-pages` permits `main` and `pypi` permits the
-   `v0.1.5` tag (and approve deployments if protection rules require it).
+   `v0.1.6` tag (and approve deployments if protection rules require it).
 3. In PyPI's skgrad project → Publishing, verify a GitHub Trusted Publisher with
    owner `LudgerHentschel`, repository `skgrad`, workflow `release.yml`, and
    environment `pypi`. The workflow filename and environment must match exactly.
 4. After branch checks and publisher settings are verified, create and push
-   `v0.1.5` at that same commit. This tag starts publication automatically after
+   `v0.1.6` at that same commit. This tag starts publication automatically after
    the release checks pass. Do not push the tag while checks are unresolved.
-5. Verify PyPI displays version 0.1.5 and BSD-3-Clause, install the published
+5. Verify PyPI displays version 0.1.6 and BSD-3-Clause, install the published
    package in a fresh environment, and check the documentation link.
 
 Changing repository visibility is a separate action. The workflow does not

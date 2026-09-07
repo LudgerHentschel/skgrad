@@ -95,7 +95,7 @@ def _forward(
     history: History = []
     for step in parts[:-1]:
         history.append((step, X))
-        X = np.asarray(_transform(step, X))
+        X = np.asarray(_transform(step, X), dtype=X.dtype)
     return parts[-1], X, history
 
 
@@ -164,7 +164,7 @@ def _pullback(history: History, jacobian: FloatArray) -> FloatArray:
             components = step.components_
             if step.whiten:
                 components = components / np.sqrt(step.explained_variance_)[:, None]
-            jacobian = jacobian @ components
+            jacobian = jacobian @ np.asarray(components, dtype=jacobian.dtype)
         elif type(step) in _SELECTORS:
             result = np.zeros(
                 (X.shape[0], jacobian.shape[1], X.shape[1]), dtype=jacobian.dtype

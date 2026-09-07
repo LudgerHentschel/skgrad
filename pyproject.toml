@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skgrad"
-version = "0.1.5"
+version = "0.1.6"
 description = "Analytic input gradients for fitted scikit-learn models"
 readme = "README.md"
 requires-python = ">=3.9"

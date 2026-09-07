@@ -62,7 +62,10 @@ def gradient_properties(model: object) -> GradientProperties:
         constant = svm_constant_jacobian(model)
         return GradientProperties(
             constant_jacobian=constant,
-            exact_quadrature_steps=1 if constant else None,
+            exact_quadrature_steps=(
+                max(1, (int(model.degree) + 1) // 2)
+                if model.kernel == "poly" else (1 if constant else None)
+            ),
         )
     if mlp_supports(model):
         return GradientProperties(

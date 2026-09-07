@@ -126,9 +126,9 @@ not training losses with respect to fitted parameters.
 - Classification probabilities are deliberately not differentiated. Scores
   and logits compose cleanly with downstream attribution methods and avoid the
   redundant common direction of multiclass probabilities.
-- Affine models and MLPs follow NumPy/scikit-learn dtype promotion, preserving
-  float32 when the input and fitted parameters are both float32. Scikit-learn's
-  LibSVM estimators use float64 fitted parameters and outputs.
+- Values and derivatives preserve normalized input precision across all backends:
+  float32 stays float32, float16 promotes to float32, and float64 stays float64.
+  Parameters are cast for evaluation; sklearn outputs may use a different dtype.
 
 See [the shape and output semantics](https://github.com/LudgerHentschel/skgrad/blob/main/docs/semantics.md)
 for the complete contract.

@@ -1,5 +1,7 @@
 """Analytic input gradients for fitted binary and regression kernel SVMs."""
 
+from ._dispatch import inherits_prediction
+
 from typing import Tuple
 
 import numpy as np
@@ -18,7 +20,7 @@ _BUILTIN_KERNELS = ("linear", "poly", "rbf", "sigmoid")
 def svm_supports(model: object) -> bool:
     """Return whether a LibSVM estimator has a supported scalar output."""
 
-    if not isinstance(model, _CLASSIFIERS + _REGRESSORS):
+    if not inherits_prediction(model, _CLASSIFIERS + _REGRESSORS):
         return False
     if getattr(model, "kernel", None) not in _BUILTIN_KERNELS:
         return False
@@ -61,7 +63,7 @@ def _parameters(model: object, X: FloatArray) -> Tuple[FloatArray, float]:
     coefficients = model.dual_coef_
     if hasattr(coefficients, "toarray"):
         coefficients = coefficients.toarray()
-    coefficients = np.asarray(coefficients, dtype=float)
+    coefficients = np.asarray(coefficients, dtype=X.dtype)
     if coefficients.shape[0] != 1:
         raise ValueError("multiclass kernel SVMs are not supported")
     return coefficients[0], float(np.asarray(model.intercept_)[0])
@@ -71,7 +73,7 @@ def _kernel_values_and_gradients(
     model: object,
     X: FloatArray,
 ) -> Tuple[FloatArray, FloatArray]:
-    support_vectors = _support_vectors(model)
+    support_vectors = _support_vectors(model, X)
     products = X @ support_vectors.T
     kernel = model.kernel
 
@@ -81,12 +83,12 @@ def _kernel_values_and_gradients(
         )
         return products, gradients
 
-    gamma = float(model._gamma)
+    gamma = _resolved_gamma(model)
     if kernel == "poly":
         base = gamma * products + float(model.coef0)
         values = base ** int(model.degree)
         if model.degree == 0:
-            gradients = np.zeros((X.shape[0],) + support_vectors.shape)
+            gradients = np.zeros((X.shape[0],) + support_vectors.shape, dtype=X.dtype)
         else:
             scale = gamma * model.degree * base ** (model.degree - 1)
             gradients = scale[:, :, None] * support_vectors[None, :, :]
@@ -108,26 +110,38 @@ def _kernel_values_and_gradients(
 
 
 def _kernel_values(model: object, X: FloatArray) -> FloatArray:
-    support_vectors = _support_vectors(model)
+    support_vectors = _support_vectors(model, X)
     products = X @ support_vectors.T
     kernel = model.kernel
     if kernel == "linear":
         return products
     if kernel == "poly":
-        return (float(model._gamma) * products + float(model.coef0)) ** int(
+        return (_resolved_gamma(model) * products + float(model.coef0)) ** int(
             model.degree
         )
     if kernel == "rbf":
         # Direct coordinate differences avoid cancellation for large offsets.
-        squared_distances = cdist(X, support_vectors, metric="sqeuclidean")
-        return np.exp(-float(model._gamma) * squared_distances)
+        squared_distances = cdist(X, support_vectors, metric="sqeuclidean").astype(X.dtype, copy=False)
+        return np.exp(-_resolved_gamma(model) * squared_distances)
     if kernel == "sigmoid":
-        return np.tanh(float(model._gamma) * products + float(model.coef0))
+        return np.tanh(_resolved_gamma(model) * products + float(model.coef0))
     raise TypeError(f"skgrad does not support the {kernel!r} kernel")
 
 
-def _support_vectors(model: object) -> FloatArray:
+def _support_vectors(model: object, X: FloatArray) -> FloatArray:
     support_vectors = model.support_vectors_
     if hasattr(support_vectors, "toarray"):
         support_vectors = support_vectors.toarray()
-    return np.asarray(support_vectors, dtype=float)
+    return np.asarray(support_vectors, dtype=X.dtype)
+
+
+def _resolved_gamma(model: object) -> float:
+    """Read sklearn's private fitted gamma, including scale/auto resolution."""
+    gamma = getattr(model, "_gamma", None)
+    if gamma is None:
+        raise RuntimeError(
+            "skgrad/scikit-learn incompatibility: fitted kernel SVM lacks "
+            "the private _gamma attribute; use a compatible scikit-learn "
+            "version and report this incompatibility to skgrad."
+        )
+    return float(gamma)

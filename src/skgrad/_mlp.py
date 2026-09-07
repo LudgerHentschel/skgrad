@@ -12,6 +12,7 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.utils.validation import check_is_fitted
 from threadpoolctl import threadpool_info
 
+from ._dispatch import inherits_prediction
 from ._inputs import validate_target
 
 
@@ -37,7 +38,7 @@ if hasattr(os, "register_at_fork"):
 
 
 def mlp_supports(model: object) -> bool:
-    return isinstance(model, (MLPRegressor, MLPClassifier))
+    return inherits_prediction(model, (MLPRegressor, MLPClassifier))
 
 
 def mlp_value_and_jacobian(
@@ -58,7 +59,7 @@ def mlp_value_and_jacobian(
         derivative = _activation_derivative(hidden_outputs[layer], model.activation)
         jacobian *= derivative[:, None, :]
         jacobian = np.einsum(
-            "sou,iu->soi", jacobian, np.asarray(model.coefs_[layer])
+            "sou,iu->soi", jacobian, np.asarray(model.coefs_[layer], dtype=X.dtype)
         )
     return values, jacobian
 
@@ -96,13 +97,13 @@ def _mlp_input_gradient_serial(
     activation, hidden_outputs = _forward_hidden(model, X)
     output_weights = np.asarray(model.coefs_[-1])
     target_index = validate_target(output_weights.shape[1], target)
-    gradient_dtype = np.result_type(X.dtype, output_weights.dtype)
+    gradient_dtype = X.dtype
     output_gradient = output_weights[:, target_index].astype(
         gradient_dtype, copy=False
     )
     if _has_exponential_output(model):
         output_value = np.exp(
-            activation @ output_gradient + model.intercepts_[-1][target_index]
+            activation @ output_gradient + np.asarray(model.intercepts_[-1], dtype=X.dtype)[target_index]
         )
         output_gradient = output_value[:, None] * output_gradient
 
@@ -123,7 +124,7 @@ def _mlp_input_gradient_serial(
         gradient = output_gradient
     for layer in range(len(hidden_outputs) - 1, -1, -1):
         gradient *= _activation_derivative(hidden_outputs[layer], model.activation)
-        gradient = gradient @ np.asarray(model.coefs_[layer]).T
+        gradient = gradient @ np.asarray(model.coefs_[layer], dtype=X.dtype).T
     return gradient
 
 
@@ -195,13 +196,13 @@ def _forward_hidden(
     activation = X
     hidden_outputs: List[FloatArray] = []
     for weights, intercept in zip(model.coefs_[:-1], model.intercepts_[:-1]):
-        activation = _activate(activation @ weights + intercept, model.activation)
+        activation = _activate(activation @ np.asarray(weights, dtype=X.dtype) + np.asarray(intercept, dtype=X.dtype), model.activation)
         hidden_outputs.append(activation)
     return activation, hidden_outputs
 
 
 def _output_values(model: object, activation: FloatArray) -> FloatArray:
-    values = activation @ model.coefs_[-1] + model.intercepts_[-1]
+    values = activation @ np.asarray(model.coefs_[-1], dtype=activation.dtype) + np.asarray(model.intercepts_[-1], dtype=activation.dtype)
     if _has_exponential_output(model):
         values = np.exp(values)
     return np.asarray(values).reshape(activation.shape[0], -1)
