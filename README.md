@@ -135,116 +135,22 @@ for the complete contract.
 
 ## Performance
 
-For affine estimators, the input Jacobian is simply the fitted coefficient
-matrix and is effectively free to reuse. MLP gradients require a forward pass
-and reverse pass. The benchmarks below answer three separate questions:
-whether the analytic gradients agree with numerical differentiation, how much
-work generic numerical differentiation requires, and how the MLP implementation
-compares with a highly optimized automatic-differentiation system.
+Fast input gradients are the reason `skgrad` exists. Central finite differences
+require two model evaluations per feature. `skgrad` instead reuses fitted
+coefficients for affine models and computes MLP gradients with a forward and
+reverse pass, obtaining all feature derivatives together. This matters especially
+for Integrated Gradients, which evaluates gradients repeatedly along paths.
 
-### Numerical agreement
+In the documented CPU benchmarks, logistic regression and MLP gradients were
+roughly **14× faster at 10 features, 100–170× at 100 features, and 950–1,300× at
+1,000 features** than central differences. The tested MLP also achieved speeds
+comparable to PyTorch CPU autodiff, directly from the fitted scikit-learn model.
+Results depend on the model, batch size, and runtime environment.
 
-`skgrad` agrees closely with generic two-sided central differences. Each
-numerical derivative below used
-`(f(x + h e_j) - f(x - h e_j)) / (2h)` with `h = 1e-5`, applied to a batch of
-100 rows and 100 features. Relative error is the maximum absolute error divided
-by the largest absolute numerical-gradient entry:
-
-| Model | Differentiated output | Maximum absolute error | Relative error |
-|---|---|---:|---:|
-| LogisticRegression | Decision score | 1.260e-10 | 7.511e-11 |
-| MLPRegressor `(64, 64)`, tanh | Prediction | 1.216e-10 | 7.488e-11 |
-| MLPClassifier `(32,)`, tanh | First class logit | 4.354e-10 | 1.090e-10 |
-
-### Speed versus numerical differentiation
-
-Central differences require two model evaluations for every input feature.
-The following benchmark holds the evaluation batch at 100 rows while varying
-the number of features. It compares a direct analytic gradient
-(`LogisticRegression`) with a gradient composed by a forward and reverse pass
-(`MLPRegressor`). Timings exclude fitting and are warm-run medians of seven
-repetitions after two warmups:
-
-| Model | Features | skgrad | Central differences | Speedup |
-|---|---:|---:|---:|---:|
-| LogisticRegression | 10 | 0.009 ms | 0.117 ms | 13.8× |
-| LogisticRegression | 100 | 0.011 ms | 1.769 ms | 167.8× |
-| LogisticRegression | 1,000 | 0.078 ms | 74.022 ms | 954.6× |
-| MLPRegressor `(64, 64)`, tanh | 10 | 0.085 ms | 1.167 ms | 13.7× |
-| MLPRegressor `(64, 64)`, tanh | 100 | 0.213 ms | 23.023 ms | 108.1× |
-| MLPRegressor `(64, 64)`, tanh | 1,000 | 0.480 ms | 634.666 ms | 1,322.6× |
-
-The numerical method perturbs one feature at a time but evaluates all 100 rows
-in one model call, so it retains the estimator's batch efficiency. Its linear
-growth in model evaluations with feature count is inherent to generic central
-differences. The complete benchmark, including deterministic model generation
-and environment reporting, is in
-[`benchmarks/numerical_gradients.py`](https://github.com/LudgerHentschel/skgrad/blob/main/benchmarks/numerical_gradients.py). The speedup generally grows with feature count; its magnitude depends on the model and runtime environment.
-
-### Speed versus PyTorch autodiff
-
-PyTorch CPU autodiff provides a more demanding speed comparison for MLPs
-because, like `skgrad`, it obtains all feature derivatives in one reverse pass.
-
-The following controlled benchmark used the same 20-input, two-hidden-layer
-`(64, 64)` tanh network, weights, biases, float64 inputs, and scalar output in
-scikit-learn/skgrad and PyTorch. Predictions and gradients agreed to floating-
-point precision. Timings are warm-run medians for gradient calculation only;
-fitting, model conversion, and weight copying were excluded. Each median uses
-25 repetitions after five warmups. PyTorch used four intra-operation CPU
-threads. `skgrad` used its automatic row-parallel policy:
-
-| Sample rows | skgrad workers | skgrad | PyTorch autodiff | Relative result |
-|---:|---:|---:|---:|---:|
-| 1 | 1 | 0.012 ms | 0.039 ms | skgrad 3.31× faster |
-| 10 | 1 | 0.024 ms | 0.052 ms | skgrad 2.19× faster |
-| 100 | 1 | 0.137 ms | 0.175 ms | skgrad 1.28× faster |
-| 1,000 | 1 | 0.759 ms | 0.680 ms | PyTorch 1.12× faster |
-| 5,000 | 2 | 3.398 ms | 2.679 ms | PyTorch 1.27× faster |
-| 10,000 | 2 | 6.498 ms | 5.425 ms | PyTorch 1.20× faster |
-| 100,000 | 2 | 54.462 ms | 51.697 ms | PyTorch 1.05× faster |
-
-In this like-for-like comparison, `skgrad` has effectively the same speed as
-PyTorch. The complete benchmark and deterministic model construction are in
-[`benchmarks/pytorch_autodiff.py`](https://github.com/LudgerHentschel/skgrad/blob/main/benchmarks/pytorch_autodiff.py).
-
-Both sets of benchmarks ran on an Apple-silicon macOS laptop with Python 3.13,
-NumPy 2.4.6, and scikit-learn 1.9.0. The autodiff benchmark additionally used
-PyTorch 2.12.0. Results will vary with network
-shape, activation, dtype, CPU, BLAS implementation, and thread configuration;
-the table is a transparent reference point rather than a universal performance
-guarantee. It does not compare GPU execution.
-
-For selected MLP outputs, batches below 5,000 rows use the low-overhead serial
-path. Larger batches are split across a persistent, hardware-aware pool of up
-to four workers. The pool is created lazily, so its first use includes a
-one-time startup cost. Complete-Jacobian calls retain the general vectorized
-path.
-
-## How gradients are computed
-
-`skgrad` uses the fitted estimator's known algebra rather than approximating
-derivatives:
-
-- **Affine models:** the fitted coefficient matrix is the constant input
-  Jacobian.
-- **MLPs:** a NumPy forward pass retains hidden activations, followed by the
-  ordinary reverse chain rule through fitted weight matrices and activation
-  derivatives.
-- **Selected outputs:** `input_gradient` propagates only the requested scalar
-  output as a two-dimensional batch, avoiding a full three-dimensional
-  Jacobian.
-- **Poisson MLPs:** the reverse pass includes the derivative of the exponential
-  output link, `exp(z)`.
-- **Large batches:** independent sample rows are divided among bounded workers,
-  while dense matrix operations remain in optimized native numerical kernels.
-  BLAS thread-capacity discovery is cached per process so repeated gradient
-  calls, such as quadrature over many paths, do not rescan loaded libraries.
-
-This is algorithmically the same backpropagation used by autodiff for an MLP,
-but specialized to scikit-learn's fitted representation and requested output.
-There is no computation graph, parameter-gradient bookkeeping, or framework
-conversion in the gradient call.
+Use `input_gradient` when you need one output: it avoids constructing the full
+multi-output Jacobian. See the **[performance guide](https://ludgerhentschel.github.io/skgrad/performance.html)**
+for accuracy checks, full timing tables, benchmark methodology, and reproducible
+scripts.
 
 ## API
 
