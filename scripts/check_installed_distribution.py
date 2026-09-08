@@ -17,6 +17,9 @@ with tempfile.TemporaryDirectory(prefix="skgrad-wheel-check-") as directory:
     location = Path(directory)
     shutil.copytree(root / "tests", location / "tests", ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copytree(root / "examples", location / "examples", ignore=shutil.ignore_patterns("__pycache__"))
+    # Release-guard tests exercise repository tooling alongside the wheel.
+    (location / "scripts").mkdir()
+    shutil.copy2(root / "scripts/check_release_version.py", location / "scripts")
     subprocess.run(
         [sys.executable, "-c",
          "import pathlib, sys, skgrad; "

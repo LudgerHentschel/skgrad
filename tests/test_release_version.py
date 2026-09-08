@@ -17,7 +17,8 @@ SCRIPT = Path(__file__).resolve().parents[1] / "scripts/check_release_version.py
      ("0.1.1rc1", "v0.1.1rc1", True)],
 )
 def test_release_version_guard(tmp_path, version, tag, success):
+    assert SCRIPT.is_file(), f"Missing release guard: {SCRIPT}"
     (tmp_path / "pyproject.toml").write_text(f'[project]\nversion = "{version}"\n')
     env = dict(os.environ, RELEASE_TAG=tag, GITHUB_REF_NAME="irrelevant")
     result = subprocess.run([sys.executable, str(SCRIPT)], cwd=tmp_path, env=env, capture_output=True, text=True)
-    assert (result.returncode == 0) is success, result.stdout + result.stderr
+    assert result.returncode == (0 if success else 1), result.stdout + result.stderr
