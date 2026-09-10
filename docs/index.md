@@ -1,10 +1,13 @@
 # skgrad documentation
 
-**Analytic input gradients for fitted scikit-learn models.**
+**scikit-learn does not expose input derivatives. skgrad computes them in
+closed form.**
 
-Use skgrad to ask how a prediction or classification score changes when an
-input feature changes. The same NumPy interface handles supported affine
-models, neural networks, kernel SVMs, and continuous preprocessing pipelines.
+For a supported fitted estimator `f` and input `x`, skgrad returns ∂f/∂x
+analytically, to floating-point precision—without finite differences, automatic
+differentiation, model conversion, or model approximation. The same NumPy
+interface handles supported affine models, neural networks, kernel SVMs, and
+continuous preprocessing pipelines.
 
 ![A fitted ReLU network and its analytic derivative](relu-analytic-gradients.svg)
 

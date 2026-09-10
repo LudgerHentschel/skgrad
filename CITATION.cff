@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+title: "skgrad"
+message: "If you use skgrad in academic work, please cite this software."
+type: software
+
+authors:
+  - family-names: "Hentschel"
+    given-names: "Ludger"
+
+repository-code: "https://github.com/LudgerHentschel/skgrad"
+url: "https://ludgerhentschel.github.io/skgrad/"
+
+license: "BSD-3-Clause"
+
+keywords:
+  - machine learning
+  - scikit-learn
+  - gradients
+  - jacobian
+  - sensitivity analysis
+  - interpretability
+  - integrated gradients
+  - feature attribution
+
+abstract: >
+  skgrad computes analytic input derivatives of fitted scikit-learn
+  estimators in closed form, without finite differences, automatic
+  differentiation, or model conversion. Coverage includes linear
+  models, kernel SVMs, multilayer perceptrons, and supported
+  preprocessing pipelines.

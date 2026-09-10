@@ -6,12 +6,12 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/skgrad.svg)](https://pypi.org/project/skgrad/)
 [![License: BSD-3-Clause](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://github.com/LudgerHentschel/skgrad/blob/main/LICENSE)
 
-**Fast analytic input gradients for fitted scikit-learn models.**
+**scikit-learn does not expose input derivatives. skgrad computes them in
+closed form.**
 
-`skgrad` differentiates a fitted model's prediction with respect to its input
-features. It provides one NumPy-based interface for supported linear models,
-classifiers, and multilayer perceptrons without finite differences, model
-conversion, or an automatic-differentiation framework. Unsupported estimators raise `TypeError`; there is no numerical fallback.
+For a supported fitted estimator `f` and input `x`, skgrad returns ∂f/∂x
+analytically, to floating-point precision—without finite differences, automatic
+differentiation, model conversion, or model approximation.
 
 ```python
 gradient = skgrad.input_gradient(model, X)
@@ -20,6 +20,21 @@ gradient = skgrad.input_gradient(model, X)
 For scalar-output models, `gradient[i, j]` is the derivative of prediction `i`
 with respect to feature `j`. Multi-output models expose one gradient per target
 or the complete input Jacobian.
+
+Input derivatives support local sensitivity analysis, linearization around an
+operating point, gradient-based optimization against a fitted model, and
+gradient-based feature attribution, including Integrated Gradients.
+
+Coverage includes linear models, kernel SVMs, multilayer perceptrons, and
+pipelines composed of supported scalers, polynomial expansion, PCA, and fitted
+feature selection. Unsupported estimators raise `TypeError` rather than
+silently falling back to a numerical approximation.
+
+skgrad also exposes derivative structure that downstream algorithms can exploit.
+`gradient_properties` identifies constant Jacobians and, for polynomial
+pipelines, the number of Gauss–Legendre nodes required for exact path
+integration. Callers can therefore eliminate quadrature error rather than bound
+it.
 
 Read the **[skgrad documentation](https://ludgerhentschel.github.io/skgrad/)** for
 worked examples, the API contract, model coverage, and numerical conventions.

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add `CITATION.cff` so the package carries a machine-readable citation
+  record, and ship it in the source distribution.
+- Rewrite the README and documentation landing page to lead with the
+  capability gap skgrad fills, the supported-coverage boundary, and the
+  derivative structure reported by `gradient_properties`.
+
 ## 0.1.6
 
 - Reject estimator subclasses overriding differentiated prediction methods across
