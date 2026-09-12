@@ -6,11 +6,6 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/skgrad.svg)](https://pypi.org/project/skgrad/)
 [![License: BSD-3-Clause](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://github.com/LudgerHentschel/skgrad/blob/main/LICENSE)
 
-skgrad is a Python package for analytic input gradients and Jacobians of
-supported fitted scikit-learn models. Install and import it as `skgrad`. It
-returns derivatives of model outputs with respect to input features; use
-UnifiedIG when you want feature attributions against a reference background.
-
 **scikit-learn does not expose input derivatives. skgrad computes them in
 closed form.**
 
