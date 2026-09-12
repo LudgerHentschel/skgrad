@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Inspect skgrad gradient benchmarks, accuracy checks, and workload-dependent performance comparisons."
+---
+
 # Performance
 
 

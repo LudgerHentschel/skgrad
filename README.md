@@ -6,6 +6,11 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/skgrad.svg)](https://pypi.org/project/skgrad/)
 [![License: BSD-3-Clause](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://github.com/LudgerHentschel/skgrad/blob/main/LICENSE)
 
+skgrad is a Python package for analytic input gradients and Jacobians of
+supported fitted scikit-learn models. Install and import it as `skgrad`. It
+returns derivatives of model outputs with respect to input features; use
+UnifiedIG when you want feature attributions against a reference background.
+
 **scikit-learn does not expose input derivatives. skgrad computes them in
 closed form.**
 
@@ -16,6 +21,12 @@ differentiation, model conversion, or model approximation.
 ```python
 gradient = skgrad.input_gradient(model, X)
 ```
+
+Classification derivatives use decision scores or logits, not probabilities.
+For one scalar output, `input_gradient` returns `(samples, features)`; the full
+Jacobian has shape `(samples, outputs, features)`. Select `target` explicitly
+for a multi-output model, or request `input_jacobian`. Unsupported models raise
+an error instead of falling back to numerical differentiation.
 
 For scalar-output models, `gradient[i, j]` is the derivative of prediction `i`
 with respect to feature `j`. Multi-output models expose one gradient per target
@@ -38,6 +49,8 @@ it.
 
 Read the **[skgrad documentation](https://ludgerhentschel.github.io/skgrad/)** for
 worked examples, the API contract, model coverage, and numerical conventions.
+For automated readers, [llms.txt](https://ludgerhentschel.github.io/skgrad/llms.txt)
+links to the guides, complete example files, and rendered API reference.
 
 ## Installation
 
@@ -145,7 +158,7 @@ not training losses with respect to fitted parameters.
   float32 stays float32, float16 promotes to float32, and float64 stays float64.
   Parameters are cast for evaluation; sklearn outputs may use a different dtype.
 
-See [the shape and output semantics](https://github.com/LudgerHentschel/skgrad/blob/main/docs/semantics.md)
+See [the shape and output semantics](https://ludgerhentschel.github.io/skgrad/semantics.html)
 for the complete contract.
 
 ## Performance
@@ -200,17 +213,17 @@ packages can compose.
 The project is licensed under the
 [BSD 3-Clause License](https://github.com/LudgerHentschel/skgrad/blob/main/LICENSE).
 
-## Unified IG
+## Related projects
 
-[Unified IG](https://github.com/LudgerHentschel/unifiedig) is an important
-consumer of `skgrad`. It uses `skgrad` for analytic gradients of supported
-smooth scikit-learn models, TreeIG for tree paths, and automatic or numerical
-backends for other model families, presenting them through one Integrated
-Gradients interface. Use Unified IG when the goal is feature attribution rather
-than direct access to model input gradients.
+| Package | When to use it |
+|---|---|
+| [UnifiedIG](https://ludgerhentschel.github.io/unifiedig/) (`unifiedig`) | Compute feature attributions through a common Integrated Gradients interface; uses skgrad for supported smooth scikit-learn models. |
+| [TreeIG](https://ludgerhentschel.github.io/treeig/) (`treeig`) | Compute tree-path attributions for supported tree models, whose ordinary gradients are zero almost everywhere. |
+| [CBaseline](https://ludgerhentschel.github.io/cbaseline/) (`cbaseline`) | Construct empirical reference distributions for IG, SHAP, and other compatible attribution engines. |
 
-[CBaseline](https://github.com/LudgerHentschel/cbaseline) constructs reference
-baseline distributions; `skgrad` supplies analytic input derivatives; TreeIG
-handles tree paths; UnifiedIG composes these components into attributions.
+Use skgrad directly for local sensitivity, input gradients, or Jacobians. See
+[the Integrated Gradients stack](https://ludgerhentschel.github.io/skgrad/ig-stack.html)
+for how the components compose. Keep background outputs on the same score scale
+as the derivatives used in classification attribution.
 
 Release maintainers: see [Publishing releases](docs/publishing.md).

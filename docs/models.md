@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Check skgrad support for linear models, kernel SVMs, MLPs, and pipelines, including explicit model and transformer restrictions."
+---
+
 # Model coverage
 
 

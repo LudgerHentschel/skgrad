@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Understand skgrad numerical conventions and why unsupported estimators do not silently use finite differences."
+---
+
 # Numerical conventions and fallback policy
 
 ## Analytic derivatives

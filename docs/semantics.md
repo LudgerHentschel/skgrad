@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Understand skgrad output shapes, target indexes, classification scores and logits, input precision, and validation errors."
+---
+
 # Output and shape semantics
 
 skgrad differentiates fitted prediction functions with respect to input

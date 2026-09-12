@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Install skgrad and compute a fitted classifier’s input gradient on its decision-score scale with a complete Python example."
+---
+
 # Getting started
 
 Install the package in your Python environment:

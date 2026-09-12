@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Compute skgrad input derivatives through supported fitted preprocessing pipelines while preserving feature coordinates."
+---
+
 # Pipeline gradients
 
 Pass the complete fitted pipeline and its input observations. skgrad evaluates

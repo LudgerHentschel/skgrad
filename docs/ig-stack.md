@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Choose skgrad, UnifiedIG, TreeIG, or CBaseline for input derivatives, feature attribution, tree paths, or reference distributions."
+---
+
 # The Integrated Gradients Stack
 
 | Package | Responsibility |
@@ -29,5 +35,5 @@ combine a score gradient with a probability-valued baseline prediction.
   evaluate analytic gradients, including supported preprocessing pipelines.
 - [TreeIG documentation](https://ludgerhentschel.github.io/treeig/):
   compute Integrated Gradients for supported tree models.
-- [UnifiedIG guide](https://github.com/LudgerHentschel/unifiedig/blob/main/docs/how-it-works.md):
+- [UnifiedIG guide](https://ludgerhentschel.github.io/unifiedig/how-it-works.html):
   select the attribution backend through a common interface.

@@ -11,6 +11,14 @@ requires-python = ">=3.9"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 authors = [{name = "Ludger Hentschel"}]
+keywords = [
+    "scikit-learn",
+    "input-gradients",
+    "jacobian",
+    "sensitivity-analysis",
+    "integrated-gradients",
+    "machine-learning",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
@@ -40,6 +48,7 @@ Issues = "https://github.com/LudgerHentschel/skgrad/issues"
 [project.optional-dependencies]
 docs = [
     "sphinx>=7,<9",
+    "sphinx-sitemap>=2.6,<3",
     "myst-parser>=3,<5",
     "pydata-sphinx-theme>=0.16,<0.17",
 ]

@@ -1,0 +1,43 @@
+# skgrad
+
+> skgrad is a Python package for analytic input gradients and Jacobians of supported fitted scikit-learn models. It differentiates model outputs with respect to input features. It does not choose baselines, integrate gradients, or compute feature attributions itself.
+
+Install with `pip install skgrad` (Python 3.9+). Import with `import skgrad`. Runtime dependencies include NumPy, SciPy, scikit-learn, and threadpoolctl. Poisson-loss MLP regression requires scikit-learn 1.7+.
+
+For a fitted supported model, use `skgrad.input_gradient(model, X)` for a scalar output or specify `target` for a multi-output model. The result has shape `(samples, features)`. `input_jacobian` returns `(samples, outputs, features)`; `model_output` returns `(samples, outputs)`. `value_and_jacobian` returns both values and their Jacobian. Target indexes refer to output positions, not class labels.
+
+Classification uses decision scores or pre-logistic/pre-softmax logits, not probabilities. Binary scores correspond to `classes_[1]`; multiclass scores follow `classes_` order. Regression uses the prediction output, including the exponential link for Poisson MLPs. Keep the same output scale when constructing a baseline for downstream Integrated Gradients.
+
+Inputs must be finite dense numeric arrays in the fitted model's feature order. For original-feature derivatives, supply the full supported preprocessing pipeline and original inputs. Unsupported estimators or transformers raise errors; skgrad does not silently fall back to finite differences or remove preprocessing. `supports(model)` checks backend coverage, not fitted state.
+
+Coverage includes supported linear models, kernel SVMs, MLPs, and continuous pipelines. Trees, multiclass kernel classifiers, callable/precomputed kernels, categorical encoders, and arbitrary transformers are outside the supported routes. Read the model matrix before adapting an example. `gradient_properties` reports constant Jacobians or known polynomial quadrature orders for downstream integration; skgrad itself supplies derivatives.
+
+## Start here
+
+- [Installation and first gradient](https://ludgerhentschel.github.io/skgrad/getting-started.html): Complete fitted classification example on the decision-score scale.
+- [Model coverage](https://ludgerhentschel.github.io/skgrad/models.html): Supported estimators, activations, kernels, and explicit gaps.
+- [Output and shape semantics](https://ludgerhentschel.github.io/skgrad/semantics.html): Score scales, targets, array shapes, input precision, and errors.
+- [Pipeline gradients](https://ludgerhentschel.github.io/skgrad/pipelines.html): Supported preprocessing, feature coordinates, clipping, and whitening conventions.
+
+## Examples and reference
+
+- [Worked examples](https://ludgerhentschel.github.io/skgrad/examples.html): Expanded examples for gradients, pipelines, and polynomial path integration.
+- [First-gradient Python source](https://raw.githubusercontent.com/ludgerhentschel/skgrad/main/examples/basic.py): Standalone executable classification example.
+- [API reference](https://ludgerhentschel.github.io/skgrad/api.html): Rendered function signatures, derivative metadata, result types, and pipeline views.
+- [Numerical conventions](https://ludgerhentschel.github.io/skgrad/numerical.html): Numerical behavior and unsupported-model policy.
+- [Performance](https://ludgerhentschel.github.io/skgrad/performance.html): Reproducible comparisons and accuracy checks; speed depends on workload and environment.
+
+Rendered HTML expands Sphinx example inclusions and API docstrings. Raw Markdown sources can contain unexpanded literalinclude and autodoc instructions.
+
+## Related projects
+
+- [Integrated Gradients stack](https://ludgerhentschel.github.io/skgrad/ig-stack.html): How derivatives, references, and tree paths compose into attributions.
+- [UnifiedIG](https://ludgerhentschel.github.io/unifiedig/): Common Integrated Gradients attribution interface across supported model families; uses skgrad for supported smooth scikit-learn models.
+- [TreeIG](https://ludgerhentschel.github.io/treeig/): Tree-path attribution for supported tree models, whose ordinary gradients are zero almost everywhere.
+- [CBaseline](https://ludgerhentschel.github.io/cbaseline/): Empirical reference distributions for IG, SHAP, and compatible attribution engines.
+
+## Development
+
+- [Repository](https://github.com/ludgerhentschel/skgrad): Source code, tests, and executable examples.
+- [Release notes](https://ludgerhentschel.github.io/skgrad/releases.html): Package changes and compatibility notes.
+- [Building and contributing](https://ludgerhentschel.github.io/skgrad/building.html): Build and validate documentation, examples, and discovery files.

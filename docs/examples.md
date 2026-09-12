@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Run complete skgrad examples for input derivatives, preprocessing pipelines, and integration of polynomial gradients."
+---
+
 # Worked examples
 
 Each example is a standalone script using only skgrad's runtime dependencies.

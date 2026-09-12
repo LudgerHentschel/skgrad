@@ -7,6 +7,7 @@ python -m pip install -e ".[docs,test]"
 python scripts/check_examples.py
 python -m pytest
 python -m sphinx -W --keep-going -b html docs docs/_build/html
+python scripts/check_docs_discovery.py
 ```
 
 Open `docs/_build/html/index.html` to preview the result. The site uses the same
@@ -63,3 +64,18 @@ pandas to exercise DataFrame feature-name validation.
 
 Changing repository visibility is a separate action. The workflow does not
 change it. Release skgrad before releasing UnifiedIG's dependency update.
+
+## Discovery files
+
+Maintain the repository-root `llms.txt` as an annotated guide to the published
+site. Sphinx copies this one source through `html_extra_path`. Link to rendered
+API pages and complete example files; raw Sphinx Markdown can contain unexpanded
+autodoc or literalinclude instructions.
+
+`sphinx-sitemap` generates `sitemap.xml` using `html_baseurl`, which also supplies
+canonical page URLs. Important pages define concise descriptions in
+`myst.html_meta` YAML front matter. The discovery check runs after HTML builds
+in both documentation workflows and checks the index copy, local targets,
+sitemap URLs, canonical links, descriptions, and expanded API/example content.
+After deployment, verify `/skgrad/llms.txt` and `/skgrad/sitemap.xml` on the public
+site and check external links in the index.

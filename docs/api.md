@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    description: "Look up skgrad input gradients, Jacobians, output functions, derivative metadata, and pipeline views in the rendered API reference."
+---
+
 # API reference
 
 All functions accept a fitted supported estimator. See [semantics](semantics.md)
