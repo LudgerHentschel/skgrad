@@ -1,4 +1,4 @@
-# skgrad
+# SKGrad
 
 [![Tests](https://github.com/LudgerHentschel/skgrad/actions/workflows/tests.yml/badge.svg)](https://github.com/LudgerHentschel/skgrad/actions/workflows/tests.yml)
 [![Documentation](https://img.shields.io/badge/docs-online-blue.svg)](https://ludgerhentschel.github.io/skgrad/)
