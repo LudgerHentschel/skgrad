@@ -212,9 +212,9 @@ The project is licensed under the
 
 | Package | When to use it |
 |---|---|
-| [UnifiedIG](https://ludgerhentschel.github.io/unifiedig/) (`unifiedig`) | Compute feature attributions through a common Integrated Gradients interface; uses skgrad for supported smooth scikit-learn models. |
-| [TreeIG](https://ludgerhentschel.github.io/treeig/) (`treeig`) | Compute tree-path attributions for supported tree models, whose ordinary gradients are zero almost everywhere. |
-| [CBaseline](https://ludgerhentschel.github.io/cbaseline/) (`cbaseline`) | Construct empirical reference distributions for IG, SHAP, and other compatible attribution engines. |
+| [UnifiedIG](https://github.com/LudgerHentschel/unifiedig) (`unifiedig`) | Compute feature attributions through a common Integrated Gradients interface; uses skgrad for supported smooth scikit-learn models. |
+| [TreeIG](https://github.com/LudgerHentschel/treeig) (`treeig`) | Compute tree-path attributions for supported tree models, whose ordinary gradients are zero almost everywhere. |
+| [CBaseline](https://github.com/LudgerHentschel/cbaseline) (`cbaseline`) | Construct empirical reference distributions for IG, SHAP, and other compatible attribution engines. |
 
 Use skgrad directly for local sensitivity, input gradients, or Jacobians. See
 [the Integrated Gradients stack](https://ludgerhentschel.github.io/skgrad/ig-stack.html)
