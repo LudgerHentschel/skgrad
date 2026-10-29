@@ -39,11 +39,11 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://ludgerhentschel.github.io/skgrad/"
-Changelog = "https://github.com/LudgerHentschel/skgrad/blob/main/CHANGELOG.md"
 Homepage = "https://github.com/LudgerHentschel/skgrad"
+Documentation = "https://ludgerhentschel.github.io/skgrad/"
 Repository = "https://github.com/LudgerHentschel/skgrad"
 Issues = "https://github.com/LudgerHentschel/skgrad/issues"
+Changelog = "https://github.com/LudgerHentschel/skgrad/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 docs = [
